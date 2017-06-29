@@ -47,6 +47,12 @@ protected:
   ospcommon::vec3f gaze{ 0,  -.1, -1};
   float fovy{ 60.f };
 
+  ospcommon::vec2i ccount{1,1};
+  OSPData ppos{nullptr};
+  OSPData pdir{nullptr};
+  OSPData pup{nullptr};
+  OSPData pfov{nullptr};
+
 private:
 
   void finalize();
