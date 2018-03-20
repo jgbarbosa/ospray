@@ -36,4 +36,7 @@ ENDIF()
 
 # enable -static-intel and avoid to export ICC specific symbols from OSPRay
 SET(CMAKE_CXX_FLAGS "-static-intel ${CMAKE_CXX_FLAGS}")
+
+IF(NOT APPLE)
 SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--exclude-libs=ALL ${CMAKE_SHARED_LINKER_FLAGS}")
+ENDIF()

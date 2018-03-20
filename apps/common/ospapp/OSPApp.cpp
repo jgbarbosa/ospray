@@ -23,6 +23,13 @@
 #include "sg/visitor/VerifyNodes.h"
 #include "sg/module/Module.h"
 
+
+// Minor fix of a report bug for MacOs Intel Compiler
+
+#if defined(__APPLE__) && defined(__INTEL_COMPILER) && (__INTEL_COMPILER_BUILD_DATE == 20171018)
+#undef isfinite
+#endif
+
 namespace ospray {
   namespace app {
 

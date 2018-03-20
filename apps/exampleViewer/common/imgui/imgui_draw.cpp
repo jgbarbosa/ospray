@@ -34,7 +34,7 @@
 #define snprintf _snprintf
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) && defined(__has_warning)
 #pragma clang diagnostic ignored "-Wold-style-cast"         // warning : use of old-style cast                              // yes, they are more terse.
 #pragma clang diagnostic ignored "-Wfloat-equal"            // warning : comparing floating point with == or != is unsafe   // storing and comparing against same constants ok.
 #pragma clang diagnostic ignored "-Wglobal-constructors"    // warning : declaration requires a global destructor           // similar to above, not sure what the exact difference it.
