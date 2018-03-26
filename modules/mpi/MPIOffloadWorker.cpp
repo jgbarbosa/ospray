@@ -53,6 +53,9 @@
 #  define HOST_NAME_MAX 10000
 #endif
 
+#include "MPOffloadWorker.h"
+#include "common/setup.h"
+
 namespace ospray {
   namespace mpi {
 
@@ -100,7 +103,7 @@ namespace ospray {
 
       \internal We ssume that mpi::worker and mpi::app have already been set up
     */
-    void runWorker()
+    void runWorker(work::WorkTypeRegistry &registry)
     {
       auto &device = ospray::api::Device::current;
 
@@ -139,20 +142,20 @@ namespace ospray {
       auto readStream = make_unique<networking::BufferedReadStream>(*mpiFabric);
 
       // create registry of work item types
-      std::map<work::Work::tag_t,work::CreateWorkFct> workTypeRegistry;
-      work::registerOSPWorkItems(workTypeRegistry);
+//      std::map<work::Work::tag_t,work::CreateWorkFct> workTypeRegistry;
+//      work::registerOSPWorkItems(workTypeRegistry);
 
       while (1) {
-        auto work = readWork(workTypeRegistry, *readStream);
+        auto work = readWork(registry, *readStream);
         postStatusMsg(OSPRAY_MPI_VERBOSE_LEVEL)
             << "#osp.mpi.worker: processing work " << typeIdOf(work)
             << ": " << typeString(work);
 
         work->run();
 
-        postStatusMsg(OSPRAY_MPI_VERBOSE_LEVEL)
-            << "#osp.mpi.worker: done w/ work " << typeIdOf(work)
-            << ": " << typeString(work);
+        //postStatusMsg(OSPRAY_MPI_VERBOSE_LEVEL)
+         std::cout  << "#osp.mpi.worker: done w/ work " << typeIdOf(work)
+            << ": " << typeString(work) << std::endl;
       }
     }
 

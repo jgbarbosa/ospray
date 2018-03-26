@@ -217,11 +217,11 @@ namespace ospray {
       OSPPickResult pick(OSPRenderer renderer,
                          const vec2f &screenPos) override;
 
-    private:
+    protected:
 
-      void initializeDevice();
+      virtual void initializeDevice();
 
-      void processWork(work::Work &work, bool flushWriteStream = false);
+      virtual void processWork(work::Work &work, bool flushWriteStream = false);
 
       /*! This only exists to support getting the voxel type for setRegion */
       int getString(OSPObject object, const char *name, char **value);

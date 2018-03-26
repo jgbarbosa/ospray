@@ -26,17 +26,17 @@
 namespace ospray {
   struct TileDesc;
   struct TileData;
-
-  struct AllTilesDoneMessage;
-  struct MasterTileMessage;
-  template <typename FBType>
-  struct MasterTileMessage_FB;
-  template <typename ColorT>
-  struct MasterTileMessage_FB_Depth;
-  struct WriteTileMessage;
-
+  //
+  //  struct AllTilesDoneMessage;
+  //  struct MasterTileMessage;
+  //  template <typename FBType>
+  //  struct MasterTileMessage_FB;
+  //  template <typename ColorT>
+  //  struct MasterTileMessage_FB_Depth;
+  //  struct WriteTileMessage;
   /*! color buffer and depth buffer on master */
-  enum COMMANDTAG {
+  enum COMMANDTAG
+  {
     /*! command tag that identifies a CommLayer::message as a write
       tile command. this is a command using for sending a tile of
       new samples to another instance of the framebuffer (the one
@@ -48,23 +48,156 @@ namespace ospray {
         message back ot the master even in cases where the master
         does not actually care about the pixel data - we still have
         to let the master know when we're done. */
-    MASTER_WRITE_TILE_I8 = 1 << 2,
+    MASTER_WRITE_TILE_I8  = 1 << 2,
     MASTER_WRITE_TILE_F32 = 1 << 3,
     /*! command tag used for sending 'final' tiles from the tile
         owner to the master frame buffer. We do send only one message
         after all worker tiles are processed. This only applies for
         the FB_NONE case where the master does not care about the
         pixel data. */
-    WORKER_ALL_TILES_DONE  = 1 << 4,
+    WORKER_ALL_TILES_DONE = 1 << 4,
     // Modifier to indicate the tile also has depth values
     MASTER_TILE_HAS_DEPTH = 1,
   };
 
+  struct TileMessage
+  {
+    int command{-1};
+  };
+
+  struct MasterTileMessage : public TileMessage
+  {
+    vec2i coords;
+    float error;
+  };
+
+  struct AllTilesDoneMessage : public TileMessage
+  {
+    int numTiles{0};
+
+    vec2i *tileIDs(ospcommon::byte_t *data)
+    {
+      return (vec2i *)(data + sizeof(TileMessage) + sizeof(int));
+    }
+
+    float *tileErrors(ospcommon::byte_t *data)
+    {
+      return (float *)(data + sizeof(TileMessage) + sizeof(int) +
+                       numTiles * sizeof(vec2i));
+    }
+
+    static size_t size(const size_t numTiles)
+    {
+      return sizeof(TileMessage) + sizeof(int) + sizeof(int) +
+             numTiles * (sizeof(vec2i) + sizeof(float));
+    }
+  };
+
+  /*! message sent to the master when a tile is finished. TODO:
+      compress the color data */
+  template <typename FBType>
+  struct MasterTileMessage_FB : public MasterTileMessage
+  {
+    FBType color[TILE_SIZE * TILE_SIZE];
+  };
+
+  template <typename ColorT>
+  struct MasterTileMessage_FB_Depth : public MasterTileMessage_FB<ColorT>
+  {
+    float depth[TILE_SIZE * TILE_SIZE];
+  };
+  // TODO: Maybe we want to add a separate MasterTileMessage_FBD
+  // that has an additional depth channel it ships along? If we
+  // only care about colors I don't want to force the added
+  // 4 * TILE_SIZE * TILE_SIZE bytes on the messaging system
+  // since it will add quite a bit of overhead.
+
+  using MasterTileMessage_RGBA_I8    = MasterTileMessage_FB<uint32>;
+  using MasterTileMessage_RGBA_F32   = MasterTileMessage_FB<vec4f>;
+  using MasterTileMessage_RGBA_I8_Z  = MasterTileMessage_FB_Depth<uint32>;
+  using MasterTileMessage_RGBA_F32   = MasterTileMessage_FB<vec4f>;
+  using MasterTileMessage_RGBA_F32_Z = MasterTileMessage_FB_Depth<vec4f>;
+  using MasterTileMessage_NONE       = MasterTileMessage;
+
+  /*! It's a real PITA do try and do this using the message structs
+   * but keep them POD and also try to not copy a ton.
+   */
+  class MasterTileMessageBuilder
+  {
+    OSPFrameBufferFormat colorFormat;
+    bool hasDepth;
+    size_t pixelSize;
+    MasterTileMessage_NONE *header;
+
+   public:
+    std::shared_ptr<mpicommon::Message> message;
+
+    MasterTileMessageBuilder(OSPFrameBufferFormat fmt,
+                             bool hasDepth,
+                             vec2i coords,
+                             float error)
+        : colorFormat(fmt), hasDepth(hasDepth)
+    {
+      int command    = 0;
+      size_t msgSize = 0;
+      switch (colorFormat) {
+      case OSP_FB_NONE:
+        throw std::runtime_error("Do not use per tile message for FB_NONE!");
+      case OSP_FB_RGBA8:
+      case OSP_FB_SRGBA:
+        command   = MASTER_WRITE_TILE_I8;
+        msgSize   = sizeof(MasterTileMessage_RGBA_I8);
+        pixelSize = sizeof(uint32);
+        break;
+      case OSP_FB_RGBA32F:
+        command   = MASTER_WRITE_TILE_F32;
+        msgSize   = sizeof(MasterTileMessage_RGBA_F32);
+        pixelSize = sizeof(vec4f);
+        break;
+      }
+      if (hasDepth) {
+        msgSize += sizeof(float) * TILE_SIZE * TILE_SIZE;
+        command = command | MASTER_TILE_HAS_DEPTH;
+      }
+      message = std::make_shared<mpicommon::Message>(msgSize);
+      header  = reinterpret_cast<MasterTileMessage_NONE *>(message->data);
+      header->command = command;
+      header->coords  = coords;
+      header->error   = error;
+    }
+    void setColor(const vec4f *color)
+    {
+      if (colorFormat != OSP_FB_NONE) {
+        const uint8_t *input = reinterpret_cast<const uint8_t *>(color);
+        uint8_t *out         = message->data + sizeof(MasterTileMessage_NONE);
+        std::copy(input, input + pixelSize * TILE_SIZE * TILE_SIZE, out);
+      }
+    }
+    void setDepth(const float *depth)
+    {
+      if (hasDepth) {
+        float *out = reinterpret_cast<float *>(
+            message->data + sizeof(MasterTileMessage_NONE) +
+            pixelSize * TILE_SIZE * TILE_SIZE);
+        std::copy(depth, depth + TILE_SIZE * TILE_SIZE, out);
+      }
+    }
+  };
+
+  /*! message sent from one node's instance to another, to tell that
+      instance to write that tile */
+  struct WriteTileMessage : public TileMessage
+  {
+    // TODO: add compression of pixels during transmission
+    vec2i coords;  // XXX redundant: it's also in tile.region.lower
+    ospray::Tile tile;
+  };
+
   class DistributedTileError : public TileError
   {
-    public:
-      DistributedTileError(const vec2i &numTiles);
-      void sync(); // broadcast tileErrorBuffer to all workers
+   public:
+    DistributedTileError(const vec2i &numTiles);
+    void sync();  // broadcast tileErrorBuffer to all workers
   };
 
   struct DistributedFrameBuffer : public mpi::messaging::MessageHandler,
@@ -78,7 +211,7 @@ namespace ospray {
                            bool hasVarianceBuffer,
                            bool masterIsAWorker = false);
 
-    ~DistributedFrameBuffer() override ;
+    ~DistributedFrameBuffer() override;
 
     // ==================================================================
     // framebuffer / device interface
@@ -113,12 +246,17 @@ namespace ospray {
 
     int32 accumID(const vec2i &) override;
     float tileError(const vec2i &tile) override;
-    void  beginFrame() override;
+    void beginFrame() override;
     float endFrame(const float errorThreshold) override;
 
-    enum FrameMode { WRITE_MULTIPLE, ALPHA_BLEND, Z_COMPOSITE };
+    enum FrameMode
+    {
+      WRITE_MULTIPLE,
+      ALPHA_BLEND,
+      Z_COMPOSITE
+    };
 
-    void setFrameMode(FrameMode newFrameMode) ;
+    void setFrameMode(FrameMode newFrameMode);
 
     // ==================================================================
     // interface for maml messaging, enables communication between
@@ -130,7 +268,7 @@ namespace ospray {
     void incoming(const std::shared_ptr<mpicommon::Message> &message) override;
 
     //! process an client-to-master all-tiles-are-done message */
-    void processMessage(AllTilesDoneMessage *msg, ospcommon::byte_t* data);
+    void processMessage(AllTilesDoneMessage *msg, ospcommon::byte_t *data);
     //! process a (non-empty) write tile message at the master
     template <typename FBType>
     void processMessage(MasterTileMessage_FB<FBType> *msg);
@@ -140,8 +278,11 @@ namespace ospray {
 
     size_t ownerIDFromTileID(size_t tileID) const;
 
-  private:
+    /*! Offloads processing of incoming message to tasking system */
+    virtual void scheduleProcessing(
+        const std::shared_ptr<mpicommon::Message> &message);
 
+   private:
     friend struct TileData;
     friend struct WriteMultipleTile;
     friend struct AlphaBlendTile_simple;
@@ -188,9 +329,6 @@ namespace ospray {
     /*! atomic update and check if frame is complete with given tiles */
     bool isFrameComplete(size_t numTiles);
 
-    /*! Offloads processing of incoming message to tasking system */
-    void scheduleProcessing(const std::shared_ptr<mpicommon::Message> &message);
-
     /*! Compose and send all-tiles-done message including tile errors. */
     void sendAllTilesDoneMessage();
 
@@ -198,8 +336,9 @@ namespace ospray {
 
     ObjectHandle myID;
 
-    int32 *tileAccumID; //< holds accumID per tile, for adaptive accumulation
-    int32 *tileInstances; //< how many copies of this tile are active, usually 1
+    int32 *tileAccumID;  //< holds accumID per tile, for adaptive accumulation
+    int32
+        *tileInstances;  //< how many copies of this tile are active, usually 1
 
     /*! holds error per tile and adaptive regions, for variance estimation /
         stopping */
@@ -218,7 +357,8 @@ namespace ospray {
         the master) */
     size_t numTilesCompletedThisFrame;
 
-    /* protected numTilesCompletedThisFrame to ensure atomic update and compare */
+    /* protected numTilesCompletedThisFrame to ensure atomic update and compare
+     */
     std::mutex numTilesMutex;
 
     /*! vector of info for *all* tiles. Each logical tile in the
@@ -241,7 +381,7 @@ namespace ospray {
         frame */
     bool frameIsDone;
 
-    bool masterIsAWorker {false};
+    bool masterIsAWorker{false};
 
     //! condition that gets triggered when the frame is done
     std::condition_variable frameDoneCond;
@@ -257,18 +397,18 @@ namespace ospray {
     /*! Gather all tile errors in the optimized FB_NONE case to send them out
         in the single AllTilesDoneMessage. */
     std::mutex tileErrorsMutex;
-    std::vector< vec2i > tileIDs;
-    std::vector< float > tileErrors;
+    std::vector<vec2i> tileIDs;
+    std::vector<float> tileErrors;
   };
 
   // Inlined definitions //////////////////////////////////////////////////////
 
   template <typename FBType>
-  inline void
-  DistributedFrameBuffer::processMessage(MasterTileMessage_FB<FBType> *msg)
+  inline void DistributedFrameBuffer::processMessage(
+      MasterTileMessage_FB<FBType> *msg)
   {
     if (hasVarianceBuffer) {
-      const vec2i tileID = msg->coords/TILE_SIZE;
+      const vec2i tileID = msg->coords / TILE_SIZE;
       if (msg->error < (float)inf)
         tileErrorRegion.update(tileID, msg->error);
     }
@@ -277,10 +417,10 @@ namespace ospray {
 
     MasterTileMessage_FB_Depth<FBType> *depth = nullptr;
     if (msg->command & MASTER_TILE_HAS_DEPTH) {
-      depth = reinterpret_cast<MasterTileMessage_FB_Depth<FBType>*>(msg);
+      depth = reinterpret_cast<MasterTileMessage_FB_Depth<FBType> *>(msg);
     }
 
-    FBType *color = reinterpret_cast<FBType*>(localFBonMaster->colorBuffer);
+    FBType *color = reinterpret_cast<FBType *>(localFBonMaster->colorBuffer);
     for (int iy = 0; iy < TILE_SIZE; iy++) {
       int iiy = iy + msg->coords.y;
       if (iiy >= numPixels.y) {
@@ -295,16 +435,16 @@ namespace ospray {
 
         color[iix + iiy * numPixels.x] = msg->color[ix + iy * TILE_SIZE];
         if (depth) {
-          localFBonMaster->depthBuffer[iix + iiy * numPixels.x]
-            = depth->depth[ix + iy * TILE_SIZE];
+          localFBonMaster->depthBuffer[iix + iiy * numPixels.x] =
+              depth->depth[ix + iy * TILE_SIZE];
         }
       }
     }
 
     // Finally, tell the master that this tile is done
     auto *tileDesc = this->getTileDescFor(msg->coords);
-    TileData *td = (TileData*)tileDesc;
+    TileData *td   = (TileData *)tileDesc;
     this->finalizeTileOnMaster(td);
   }
 
-} // ::ospray
+}  // namespace ospray
