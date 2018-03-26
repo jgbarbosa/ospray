@@ -153,9 +153,9 @@ namespace ospray {
 
         work->run();
 
-        //postStatusMsg(OSPRAY_MPI_VERBOSE_LEVEL)
-         std::cout  << "#osp.mpi.worker: done w/ work " << typeIdOf(work)
-            << ": " << typeString(work) << std::endl;
+        postStatusMsg(OSPRAY_MPI_VERBOSE_LEVEL)
+          << "#osp.mpi.worker: done w/ work " << typeIdOf(work)
+            << ": " << typeString(work);
       }
     }
 
