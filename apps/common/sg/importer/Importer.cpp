@@ -95,7 +95,7 @@ namespace ospray {
 
     // for now, let's hardcode the importers - should be moved to a
     // registry at some point ...
-    void importFileType_points(std::shared_ptr<Node> &world,
+    void importFileType_points(const std::shared_ptr<Node> &world,
                                const FileName &url);
 
 
@@ -140,7 +140,7 @@ namespace ospray {
       std::shared_ptr<FormatURL> fu;
       try {
         fu = std::make_shared<FormatURL>(fileName.c_str());
-      } catch (std::runtime_error e) {
+      } catch (const std::runtime_error &) {
         /* this failed so this was not a file type url ... */
         fu = nullptr;
       }
@@ -159,7 +159,7 @@ namespace ospray {
       loadedFileName = fileName.str();
     }
 
-    void Importer::importURL(std::shared_ptr<Node> world,
+    void Importer::importURL(const std::shared_ptr<Node> &world,
                              const FileName &fileName,
                              const FormatURL &fu) const
     {
@@ -175,18 +175,16 @@ namespace ospray {
       }
     }
 
-    void Importer::importRegistryFileLoader(std::shared_ptr<Node> world,
+    void Importer::importRegistryFileLoader(const std::shared_ptr<Node> &world,
                                             const std::string &type,
                                             const FileName &fileName) const
     {
-      using importFunction = void(*)(std::shared_ptr<Node>, const FileName &);
-
-      static std::map<std::string, importFunction> symbolRegistry;
+      static std::map<std::string, ImporterFunction> symbolRegistry;
 
       if (symbolRegistry.count(type) == 0) {
         std::string creationFunctionName = "ospray_sg_import_" + type;
         symbolRegistry[type] =
-            (importFunction)getSymbol(creationFunctionName);
+            (ImporterFunction)getSymbol(creationFunctionName);
       }
 
       auto fcn = symbolRegistry[type];
@@ -206,7 +204,7 @@ namespace ospray {
           != importerForExtension.end();
     }
 
-    void Importer::importDefaultExtensions(std::shared_ptr<Node> world,
+    void Importer::importDefaultExtensions(const std::shared_ptr<Node> &world,
                                            const FileName &fileName) const
     {
       auto ext = fileName.ext();
@@ -231,8 +229,16 @@ namespace ospray {
       } else if (ext == "xyz" || ext == "xyz2" || ext == "xyz3") {
         sg::importXYZ(world, fileName);
 #ifdef OSPRAY_APPS_SG_VTK
-      } else if (ext == "vtu" || ext == "vtk" || ext == "off") {
+      } else if (ext == "vtu" || ext == "vtk" || ext == "off"
+#ifdef OSPRAY_APPS_SG_VTK_XDMF
+                 || ext == "xdmf"
+#endif
+                 ) {
         sg::importUnstructuredVolume(world, fileName);
+      } else if (ext == "vtp") {
+        sg::importVTKPolyData(world, fileName);
+      } else if (ext == "vti") {
+        sg::importVTI(world, fileName);
 #endif
 #ifdef OSPRAY_APPS_SG_CHOMBO
       } else if (ext == "hdf5") {

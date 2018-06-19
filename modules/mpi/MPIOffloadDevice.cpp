@@ -305,6 +305,11 @@ namespace ospray {
 
     // MPIDevice definitions //////////////////////////////////////////////////
 
+    MPIOffloadDevice::MPIOffloadDevice()
+    {
+      maml::init();
+    }
+
     MPIOffloadDevice::~MPIOffloadDevice()
     {
       if (IamTheMaster()) {

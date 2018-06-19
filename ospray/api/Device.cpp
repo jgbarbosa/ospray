@@ -23,8 +23,6 @@
 #include "ospcommon/utility/getEnvVar.h"
 #include "ospcommon/sysinfo.h"
 #include "ospcommon/tasking/tasking_system_handle.h"
-// embree
-#include "embree2/rtcore.h"
 
 #include <map>
 
@@ -101,7 +99,7 @@ namespace ospray {
           utility::getEnvVar<std::string>("OSPRAY_LOG_OUTPUT");
 
       auto dst = OSPRAY_LOG_OUTPUT.value_or(
-        getParam<std::string>("logOutput", "none")
+        getParam<std::string>("logOutput", "")
       );
 
       if (dst == "cout")
@@ -115,7 +113,7 @@ namespace ospray {
           utility::getEnvVar<std::string>("OSPRAY_ERROR_OUTPUT");
 
       dst = OSPRAY_ERROR_OUTPUT.value_or(
-        getParam<std::string>("errorOutput", "none")
+        getParam<std::string>("errorOutput", "")
       );
 
       if (dst == "cout")
@@ -130,13 +128,13 @@ namespace ospray {
         numThreads = 1;
       }
 
-      auto OSPRAY_SET_AFFINITY = utility::getEnvVar<int>("OSPRAY_SET_AFFINITY");
-      if (OSPRAY_SET_AFFINITY) {
-        threadAffinity = OSPRAY_SET_AFFINITY.value() == 0 ? DEAFFINITIZE :
-                                                            AFFINITIZE;
-      }
+      threadAffinity = AUTO_DETECT;
 
-      threadAffinity = getParam<bool>("setAffinity", threadAffinity);
+      auto OSPRAY_SET_AFFINITY = utility::getEnvVar<int>("OSPRAY_SET_AFFINITY");
+      if (OSPRAY_SET_AFFINITY)
+        threadAffinity = OSPRAY_SET_AFFINITY.value();
+
+      threadAffinity = getParam<int>("setAffinity", threadAffinity);
 
       tasking::initTaskingSystem(numThreads);
 

@@ -19,13 +19,15 @@
 //ospray
 #include "Device.h"
 //embree
-#include "embree2/rtcore.h"
-
+#include "embree3/rtcore.h"
 
 /*! \file ISPCDevice.h Implements the "local" device for local rendering */
 
+extern "C" OSPRAY_SDK_INTERFACE RTCDevice ispc_embreeDevice();
+
 namespace ospray {
   namespace api {
+
 
     struct OSPRAY_SDK_INTERFACE ISPCDevice : public Device
     {

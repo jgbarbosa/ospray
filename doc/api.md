@@ -8,8 +8,8 @@ To access the OSPRay API you first need to include the OSPRay header
 where the API is compatible with C99 and C++.
 
 
-Initialization
---------------
+Initialization and Shutdown
+---------------------------
 
 In order to use the API, OSPRay must be initialized with a "device". A
 device is the object which implements the API. Creating and initializing
@@ -226,6 +226,17 @@ implemented in shared libraries. To load plugin `name` from
 Modules are searched in OS-dependent paths. `ospLoadModule` returns
 `OSP_NO_ERROR` if the plugin could be successfully loaded.
 
+### Shutting Down OSPRay
+
+When the application is finished using OSPRay (typically on application exit),
+the OSPRay API should be finalized with
+
+    void ospShutdown();
+
+This API call ensures that the current device is cleaned up appropriately. Due
+to static object allocation having non-deterministic ordering, it is recommended
+that applications call `ospShutdown()` before the calling application process
+terminates.
 
 Objects
 -------
@@ -558,14 +569,15 @@ like the structured volume equivalent, but they only modify the root
 
 ### Unstructured Volumes
 
-Unstructured volumes can contain tetrahedral or hexahedral cell types,
-and are defined by three arrays: vertices, corresponding field values,
-and eight indices per cell (first four are -1 for tetrahedral
-cells). An unstructred volume type is created by passing the type
-string "`unstructured_volume`" to `ospNewVolume`.
+Unstructured volumes can contain tetrahedral, wedge, or hexahedral
+cell types, and are defined by three arrays: vertices, corresponding
+field values, and eight indices per cell (first four are -1 for
+tetrahedral cells, first two are -2 for wedge cells). An unstructured
+volume type is created by passing the type string
+"`unstructured_volume`" to `ospNewVolume`.
 
-Field values can be specified per-vertex ('field') or per-cell
-('cellField').  If both values are set, cellField takes precedence.
+Field values can be specified per-vertex (`field`) or per-cell
+(`cellField`). If both values are set, `cellField` takes precedence.
 
 Similar to [triangle mesh], each tetrahedron is formed by a group of
 indices into the vertices. For each vertex, the corresponding (by array
@@ -574,20 +586,37 @@ the index order for each tetrahedron does not matter, as OSPRay
 internally calculates vertex normals to ensure proper sampling and
 interpolation.
 
-For hexahedral cells, each hexahedron is formed by a group of eight
-indices into the vertics and data value.  Vertex ordering is the same
-as VTK_HEXAHEDRON - four bottom vertices counterclockwise, then top
-four counterclockwise.
+For wedge cells, each wedge is formed by a group of six indices into
+the vertices and data value.  Vertex ordering is the same as
+`VTK_WEDGE` - three bottom vertices counterclockwise, then top three
+counterclockwise.
 
-  Type     Name        Description
-  -------- ----------- ------------------------------------------------------------
-  vec3f[]  vertices    [data] array of vertex positions
-  float[]  field       [data] array of vertex data values to be sampled
-  float[]  cellField   [data] array of cell data values to be sampled
-  vec4i[]  intices     [data] array of tetrahedra indices (into vertices and field)
-  string   hexMethod   "planar" (default) or "nonplanar"
-  -------- ----------- ------------------------------------------------------------
-  : Additional configuration parameters for tetrahedral volumes.
+For hexahedral cells, each hexahedron is formed by a group of eight
+indices into the vertices and data value. Vertex ordering is the same as
+`VTK_HEXAHEDRON` -- four bottom vertices counterclockwise, then top four
+counterclockwise.
+
+  -------- ------------------  -------  ---------------------------------------
+  Type     Name                Default  Description
+  -------- ------------------  -------  ---------------------------------------
+  vec3f[]  vertices                     [data] array of vertex positions
+
+  float[]  field                        [data] array of vertex data values to
+                                        be sampled
+
+  float[]  cellField                    [data] array of cell data values to be
+                                        sampled
+
+  vec4i[]  indices                      [data] array of tetrahedra indices
+                                        (into vertices and field)
+
+  string   hexMethod           planar   "planar" (faster, assumes planar sides)
+                                        or "nonplanar"
+
+  bool     precomputedNormals  true     whether to accelerate by precomputing,
+                                        at a cost of 72 bytes/cell
+  -------- ------------------  -------  ---------------------------------------
+  : Additional configuration parameters for unstructured volumes.
 
 ### Transfer Function
 
@@ -643,8 +672,30 @@ triangle mesh recognizes the following parameters:
   ------------------ ---------------- -------------------------------------------------
   : Parameters defining a triangle mesh geometry.
 
-The `vertex` and `index` arrays are mandatory to creat a valid triangle
+The `vertex` and `index` arrays are mandatory to create a valid triangle
 mesh.
+
+### Quad Mesh
+
+A mesh consisting of quads is created by calling `ospNewGeometry` with
+type string "`quads`". Once created, a quad mesh recognizes the
+following parameters:
+
+  Type               Name             Description
+  ------------------ ---------------- -------------------------------------------------
+  vec3f(a)[]         vertex           [data] array of vertex positions
+  vec3f(a)[]         vertex.normal    [data] array of vertex normals
+  vec4f[] / vec3fa[] vertex.color     [data] array of vertex colors (RGBA/RGB)
+  vec2f[]            vertex.texcoord  [data] array of vertex texture coordinates
+  vec4i[]            index            [data] array of quad indices (into the vertex array(s))
+  ------------------ ---------------- -------------------------------------------------
+  : Parameters defining a quad mesh geometry.
+
+The `vertex` and `index` arrays are mandatory to create a valid quad
+mesh. A quad is internally handled as a pair of two triangles, thus
+mixing triangles and quad is supported by encoding a triangle as a quad
+with the last two vertex indices being identical (`w=z`).
+
 
 ### Spheres
 
@@ -656,34 +707,54 @@ representations in the application this geometry allows a flexible way
 of specifying the data of center position and radius within a [data]
 array:
 
-  ---------- ----------------- --------  ---------------------------------------
-  Type       Name               Default  Description
-  ---------- ----------------- --------  ---------------------------------------
-  float      radius                0.01  radius of all spheres
-                                         (if `offset_radius` is not used)
+  ------------ ----------------- ----------------------- ---------------------------------------
+  Type         Name                              Default Description
+  ------------ ----------------- ----------------------- ---------------------------------------
+  float        radius                               0.01  radius of all spheres
+                                                          (if `offset_radius` is not used)
 
-  OSPData    spheres               NULL  memory holding the spatial [data] of
-                                         all spheres
+  OSPData      spheres                              NULL  memory holding the spatial [data] of
+                                                          all spheres
 
-  int        bytes_per_sphere        16  size (in bytes) of each sphere within
-                                         the `spheres` array
+  int          bytes_per_sphere                       16  size (in bytes) of each sphere within
+                                                          the `spheres` array
 
-  int        offset_center            0  offset (in bytes) of each sphere's
-                                         "vec3f center" position (in
-                                         object-space) within the `spheres`
-                                         array
+  int          offset_center                           0  offset (in bytes) of each sphere's
+                                                          "vec3f center" position (in
+                                                          object-space) within the `spheres`
+                                                          array
 
-  int        offset_radius           -1  offset (in bytes) of each sphere's
-                                         "float radius" within the `spheres`
-                                         array (`-1` means disabled and use
-                                         `radius`)
+  int          offset_radius                          -1  offset (in bytes) of each sphere's
+                                                          "float radius" within the `spheres`
+                                                          array (`-1` means disabled and use `radius`)
 
-  vec4f[] /  color                 NULL  [data] array of colors (RGBA/RGB),
-  vec3f(a)[]                             color is constant for each sphere
+  int          offset_colorID                         -1  offset (in bytes) of each sphere's
+                                                          "int colorID" within the `spheres`
+                                                          array (`-1` means disabled and use
+                                                          the shared material color)
 
-  vec2f[]    texcoord              NULL  [data] array of texture coordinates,
-                                         coordinate is constant for each sphere
-  ---------- ----------------- --------  ---------------------------------------
+  vec4f[] /    color                                NULL  [data] array of colors (RGBA/RGB),
+  vec3f(a)[] /                                            color is constant for each sphere
+  vec4uc
+
+  int          color_offset                           0   offset (in bytes) to the start of
+                                                          the color data in `color`
+
+  int          color_format             `color.data_type`  the format of the color data.
+                                                          Can be one of:
+                                                          `OSP_FLOAT4`, `OSP_FLOAT3`,
+                                                          `OSP_FLOAT3A` or `OSP_UCHAR4`. Defaults
+                                                          to the type of data in `color`
+
+  int          color_stride      `sizeof(color_format)`   stride (in bytes) between each color
+                                                          element in the `color` array.
+                                                          Defaults to the size of a single
+                                                          element of type `color_format`
+
+
+  vec2f[]      texcoord                             NULL  [data] array of texture coordinates,
+                                                          coordinate is constant for each sphere
+  ---------- ----------------- -------------------------  ---------------------------------------
   : Parameters defining a spheres geometry.
 
 ### Cylinders
@@ -781,7 +852,7 @@ than the curvature radius of the Bézier curve at each location on the
 curve.
 
 A streamlines geometry can contain multiple disjoint streamlines, each
-streamline is specified as a list of linear segments (or links)
+streamline is specified as a list of segments (or links)
 referenced via `index`: each entry `e` of the `index` array points the
 first vertex of a link (`vertex[index[e]]`) and the second vertex of the
 link is implicitly the directly following one (`vertex[index[e]+1]`).
@@ -976,6 +1047,29 @@ An existing geometry or volume can be removed from a model with
 
     void ospRemoveGeometry(OSPModel, OSPGeometry);
     void ospRemoveVolume(OSPModel, OSPVolume);
+
+Finally, Models can be configured with parameters for making various
+feature/performance trade-offs:
+
+  ------------- ---------------- --------  -------------------------------------
+  Type          Name              Default  Description
+  ------------- ---------------- --------  -------------------------------------
+  bool          dynamicScene        false  use RTC_SCENE_DYNAMIC flag (faster
+                                           BVH build, slower ray traversal),
+                                           otherwise uses RTC_SCENE_STATIC flag
+                                           (faster ray traversal, slightly
+                                           slower BVH build)
+
+  bool          compactMode         false  tell Embree to use a more compact BVH
+                                           in memory by trading ray traversal
+                                           performance
+
+  bool          robustMode          false  tell Embree to enable more robust ray
+                                           intersection code paths (slightly
+                                           slower)
+  ------------- ---------------- --------  -------------------------------------
+  : Parameters understood by Models
+
 
 ### Lights
 
@@ -1224,6 +1318,142 @@ Additionally, all textures support [texture transformations].
 
 ![Rendering of a OBJ material with wood textures.][imgMaterialOBJ]
 
+#### Principled
+
+The Principled material is the most complex material offered by the
+[path tracer], which is capable of producing a wide variety of materials
+(e.g., plastic, metal, wood, glass) by combining multiple different layers
+and lobes. It uses the GGX microfacet distribution with approximate multiple
+scattering for dielectrics and metals, uses the Oren-Nayar model for diffuse
+reflection, and is energy conserving. To create a Principled material, pass
+the type string "`Principled`" to `ospNewMaterial2`. Its parameters are
+listed in the table below.
+
+  -------------------------------------------------------------------------------------------
+  Type   Name                 Default  Description
+  ------ ----------------- ----------  ------------------------------------------------------
+  vec3f  baseColor          white 0.8  base reflectivity (diffuse and/or metallic)
+
+  vec3f  edgeColor              white  edge tint (metallic only)
+
+  float  metallic                   0  mix between dielectric (diffuse and/or specular)
+                                       and metallic (specular only with complex IOR) in [0–1]
+
+  float  diffuse                    1  diffuse reflection weight in [0–1]
+
+  float  specular                   1  specular reflection/transmission weight in [0–1]
+
+  float  ior                        1  dielectric index of refraction
+
+  float  transmission               0  specular transmission weight in [0–1]
+
+  vec3f  transmissionColor      white  attenuated color due to transmission (Beer's law)
+
+  float  transmissionDepth          1  distance at which color attenuation is equal to
+                                       transmissionColor
+
+  float  roughness                  0  diffuse and specular roughness in [0–1], 0 is perfectly
+                                       smooth
+
+  float  anisotropy                 0  amount of specular anisotropy in [0–1]
+
+  float  rotation                   0  rotation of the direction of anisotropy in [0–1], 1 is
+                                       going full circle
+
+  float  normal                     1  normal map/scale
+
+  bool   thin                   false  flag specifying whether the material is thin or solid
+
+  float  thickness                  1  thickness of the material (thin only), affects the
+                                       amount of color attenuation due to specular transmission
+
+  float  backlight                  0  amount of diffuse transmission (thin only) in [0–2],
+                                       1 is 50% reflection and 50% transmission, 2 is
+                                       transmission only
+
+  float  coat                       0  clear coat layer weight in [0–1]
+
+  float  coatIor                  1.5  clear coat index of refraction
+
+  vec3f  coatColor              white  clear coat color tint
+
+  float  coatThickness              1  clear coat thickness, affects the amount of color
+                                       attenuation
+
+  float  coatRoughness              0  clear coat roughness in [0–1], 0 is perfectly smooth
+
+  float  coatNormal                 1  clear coat normal map/scale
+
+  float  sheen                      0  sheen layer weight in [0–1]
+
+  vec3f  sheenColor             white  sheen color tint
+
+  float  sheenRoughness           0.2  sheen roughness in [0–1], 0 is perfectly smooth
+
+  float  opacity                    1  cut-out opacity/transparency, 1 is fully opaque
+  -------------------------------------------------------------------------------------------
+  : Parameters of the Principled material.
+
+All parameters can be textured by passing a [texture] handle, suffixed with "`Map`"
+(e.g., "`baseColorMap`"); [texture transformations] are supported as well.
+
+![Rendering of a Principled coated brushed metal material with textured
+anisotropic rotation and a dust layer (sheen) on top.][imgMaterialPrincipled]
+
+#### CarPaint
+
+The CarPaint material is a specialized version of the Principled material for
+rendering different types of car paints. To create a CarPaint material, pass
+the type string "`CarPaint`" to `ospNewMaterial2`. Its parameters are listed
+in the table below.
+
+  -------------------------------------------------------------------------------------------
+  Type   Name                 Default  Description
+  ------ ----------------- ----------  ------------------------------------------------------
+  vec3f  baseColor          white 0.8  diffuse base reflectivity
+
+  float  roughness                  0  diffuse roughness in [0–1], 0 is perfectly smooth
+
+  float  normal                     1  normal map/scale
+
+  float  flakeDensity               0  density of metallic flakes in [0–1], 0 disables flakes,
+                                       1 fully covers the surface with flakes
+
+  float  flakeScale               100  scale of the flake structure, higher values increase
+                                       the amount of flakes
+
+  float  flakeSpread              0.3  flake spread in [0–1]
+
+  float  flakeJitter             0.75  flake randomness in [0–1]
+
+  float  flakeRoughness           0.3  flake roughness in [0–1], 0 is perfectly smooth
+
+  float  coat                       1  clear coat layer weight in [0–1]
+
+  float  coatIor                  1.5  clear coat index of refraction
+
+  vec3f  coatColor              white  clear coat color tint
+
+  float  coatThickness              1  clear coat thickness, affects the amount of color
+                                       attenuation
+
+  float  coatRoughness              0  clear coat roughness in [0–1], 0 is perfectly smooth
+
+  float  coatNormal                 1  clear coat normal map/scale
+
+  vec3f  flipflopColor          white  reflectivity of coated flakes at grazing angle, used
+                                       together with coatColor produces a pearlescent paint
+
+  float  flipflopFalloff            1  flip flop color falloff, 1 disables the flip flop
+                                       effect
+  -------------------------------------------------------------------------------------------
+  : Parameters of the CarPaint material.
+
+All parameters can be textured by passing a [texture] handle, suffixed with "`Map`"
+(e.g., "`baseColorMap`"); [texture transformations] are supported as well.
+
+![Rendering of a pearlescent CarPaint material.][imgMaterialCarPaint]
+
 #### Metal
 
 The [path tracer] offers a physical metal, supporting changing roughness
@@ -1453,7 +1683,7 @@ convention shall be used. The following parameters (prefixed with
   Type   Name         Description
   ------ ------------ ------------------------------------------------------
   vec4f  transform    interpreted as 2×2 matrix (linear part), column-major
-  float  rotation     angle in degree, counterclock-wise, around center
+  float  rotation     angle in degree, counterclockwise, around center
   vec2f  scale        enlarge texture, relative to center (0.5, 0.5)
   vec2f  translation  move texture in positive direction (right/up)
   ------ ------------ ------------------------------------------------------
@@ -1671,13 +1901,6 @@ application driving a display wall may well generate an intermediate
 framebuffer and eventually transfer its pixel to the individual displays
 using an `OSPPixelOp` [pixel operation].
 
-A framebuffer can be freed again using
-
-    void ospFreeFrameBuffer(OSPFrameBuffer);
-
-Because OSPRay uses reference counting internally the framebuffer may
-not immediately be deleted at this time.
-
 The application can map the given channel of a framebuffer – and thus
 access the stored pixel information – via
 
@@ -1723,19 +1946,19 @@ To set a pixel operation to the given framebuffer use
 #### Tone Mapper
 
 The tone mapper is a pixel operation which implements a generic filmic tone
-mapping operator. It approximates the Academy Color Encoding System (ACES)
-by default. The tone mapper is created by passing the type string "`tonemapper`"
-to `ospNewPixelOp`. The tone mapping curve can be customized using the
-parameters listed in the table below.
+mapping operator. Using the default parameters it approximates the Academy
+Color Encoding System (ACES). The tone mapper is created by passing the type
+string "`tonemapper`" to `ospNewPixelOp`. The tone mapping curve can be
+customized using the parameters listed in the table below.
 
   ----- ---------- --------    -----------------------------------------
   Type  Name       Default     Description
   ----- ---------  --------    -----------------------------------------
   float contrast   1.6773      contrast (toe of the curve); typically is
-                               in [1-2]
+                               in [1–2]
 
   float shoulder   0.9714      highlight compression (shoulder of the
-                               curve); typically is in [0.9-1]
+                               curve); typically is in [0.9–1]
 
   float midIn      0.18        mid-level anchor input; default is 18%
                                gray
@@ -1744,9 +1967,25 @@ parameters listed in the table below.
                                gray
 
   float hdrMax     11.0785     maximum HDR input that is not clipped
+
+  bool  acesColor  true        apply the ACES color transforms
   ----- ---------  --------    -----------------------------------------
   : Parameters accepted by the tone mapper.
 
+To use the popular "Uncharted 2" filmic tone mapping curve instead, set the
+parameters to the values listed in the table below.
+
+  Name       Value
+  ---------  --------
+  contrast   1.1759
+  shoulder   0.9746
+  midIn      0.18
+  midOut     0.18
+  hdrMax     6.3704
+  acesColor  false
+  ---------  --------
+  : Filmic tone mapping curve parameters. Note that the curve includes an
+  exposure bias to match 18% middle gray.
 
 Rendering
 ---------

@@ -48,6 +48,23 @@ namespace ospray {
     ImGui::Text("(%f, %f, %f)", val.upper.x, val.upper.y, val.upper.z);
   }
 
+  static void sgWidget_vec4f(const std::string &text,
+                             std::shared_ptr<sg::Node> node)
+  {
+    vec4f val = node->valueAs<vec4f>();
+    auto nodeFlags = node->flags();
+    if (nodeFlags & sg::NodeFlags::gui_readonly) {
+      ImGui::Text("(%f, %f, %f, %f)", val.x, val.y, val.z, val.w);
+    } else if (nodeFlags & sg::NodeFlags::gui_slider) {
+      if (ImGui::SliderFloat4(text.c_str(), &val.x,
+                              node->min().get<vec4f>().x,
+                              node->max().get<vec4f>().x))
+        node->setValue(val);
+    } else if (ImGui::DragFloat4(text.c_str(), (float*)&val.x, .01f)) {
+      node->setValue(val);
+    }
+  }
+
   static void sgWidget_vec3f(const std::string &text,
                              std::shared_ptr<sg::Node> node)
   {
@@ -172,6 +189,15 @@ namespace ospray {
             list.push_back('\0');
         }
 
+        // add to whitelist if not found
+        if (val == -1) {
+          val = whitelist.size();
+          whitelist.push_back(value);
+          node->setWhiteList(whitelist);
+          list += value;
+          list.push_back('\0');
+        }
+
         ImGui::Combo(text.c_str(), &val, list.c_str(), whitelist.size());
         node->setValue(whitelist[val]);
       } else {
@@ -223,6 +249,7 @@ namespace ospray {
         {"vec2f", sgWidget_vec2f},
         {"vec3f", sgWidget_vec3f},
         {"vec3i", sgWidget_vec3i},
+        {"vec4f", sgWidget_vec4f},
         {"box3f", sgWidget_box3f},
         {"string", sgWidget_string},
         {"bool", sgWidget_bool},
@@ -360,12 +387,6 @@ namespace ospray {
       break;
     case 'p':
       printViewport();
-      break;
-    case 27 /*ESC*/:
-    case 'q':
-    case 'Q':
-      renderEngine.stop();
-      std::exit(0);
       break;
     default:
       ImGui3DWidget::keypress(key);

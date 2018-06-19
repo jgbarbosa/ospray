@@ -27,6 +27,7 @@ namespace ospray {
       createChild("hexMethod", "string", std::string("planar"))
         .setWhiteList({std::string("planar"),
               std::string("nonplanar")});
+      createChild("precomputedNormals", "bool", true);
     }
 
     std::string UnstructuredVolume::toString() const
@@ -38,7 +39,9 @@ namespace ospray {
     {
       auto ospVolume = valueAs<OSPVolume>();
 
-      if (!ospVolume) {
+      if (ospVolume) {
+        ospCommit(ospVolume);
+      } else {
         if (!hasChild("vertices"))
           throw std::runtime_error("#osp:sg UnstructuredVolume -> no 'vertices' array!");
         else if (!hasChild("indices"))
@@ -120,7 +123,6 @@ namespace ospray {
           child("isosurface") = (voxelRange.y + voxelRange.x) / 2.f;
       }
 
-      ospCommit(ospVolume);
       if (child("isosurfaceEnabled").valueAs<bool>() == true
           && isosurfacesGeometry) {
         OSPData isovaluesData = ospNewData(1, OSP_FLOAT,

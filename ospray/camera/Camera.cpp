@@ -21,6 +21,10 @@
 
 namespace ospray {
 
+  ProjectedPoint::ProjectedPoint(const vec3f &pos, float radius)
+    : screenPos(pos), radius(radius)
+  {}
+
   Camera *Camera::createInstance(const char *type)
   {
     return createInstanceHelper<Camera, OSP_CAMERA>(type);
@@ -52,6 +56,10 @@ namespace ospray {
         , shutterOpen
         , shutterClose
         );
+  }
+
+  ProjectedPoint Camera::projectPoint(const vec3f &) const {
+    NOTIMPLEMENTED;
   }
 
 } // ::ospray
