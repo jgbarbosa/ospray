@@ -43,165 +43,165 @@ namespace ospray {
 
   using DFB = DistributedFrameBuffer;
 
-  struct TileMessage
-  {
-    int command {-1};
-  };
-
-  struct MasterTileMessage : public TileMessage
-  {
-    vec2i coords;
-    float error;
-  };
-
-  struct AllTilesDoneMessage : public TileMessage
-  {
-      int numTiles {0};
-
-      vec2i* tileIDs(ospcommon::byte_t* data)
-      {
-          return (vec2i*)(data + sizeof(TileMessage) + sizeof(int));
-      }
-
-      float* tileErrors(ospcommon::byte_t* data)
-      {
-          return (float*)(data + sizeof(TileMessage) + sizeof(int) + numTiles * sizeof(vec2i));
-      }
-
-      static size_t size(const size_t numTiles)
-      {
-          return sizeof(TileMessage) + sizeof(int) + sizeof(int) +
-                  numTiles * (sizeof(vec2i) + sizeof(float));
-      }
-  };
-
-  /*! message sent to the master when a tile is finished. TODO:
-      compress the color data */
-  template <typename ColorT>
-  struct MasterTileMessage_FB : public MasterTileMessage
-  {
-    ColorT color[TILE_SIZE * TILE_SIZE];
-  };
-
-  template <typename ColorT>
-  struct MasterTileMessage_FB_Depth : public MasterTileMessage_FB<ColorT>
-  {
-    float depth[TILE_SIZE * TILE_SIZE];
-  };
-
-  template <typename ColorT>
-  struct MasterTileMessage_FB_Depth_Aux : public MasterTileMessage_FB_Depth<ColorT>
-  {
-    vec3f normal[TILE_SIZE * TILE_SIZE];
-    vec3f albedo[TILE_SIZE * TILE_SIZE];
-  };
-
-  using MasterTileMessage_RGBA_I8    = MasterTileMessage_FB<uint32>;
-  using MasterTileMessage_RGBA_I8_Z  = MasterTileMessage_FB_Depth<uint32>;
-  using MasterTileMessage_RGBA8_Z_AUX = MasterTileMessage_FB_Depth_Aux<uint32>;
-  using MasterTileMessage_RGBA_F32   = MasterTileMessage_FB<vec4f>;
-  using MasterTileMessage_RGBA_F32_Z = MasterTileMessage_FB_Depth<vec4f>;
-  using MasterTileMessage_RGBAF32_Z_AUX = MasterTileMessage_FB_Depth_Aux<vec4f>;
-  using MasterTileMessage_NONE       = MasterTileMessage;
-
-  /*! It's a real PITA do try and do this using the message structs
-   * but keep them POD and also try to not copy a ton.
-   */
-  class MasterTileMessageBuilder
-  {
-    OSPFrameBufferFormat colorFormat;
-    bool hasDepth;
-    bool hasNormal;
-    bool hasAlbedo;
-    size_t pixelSize;
-    MasterTileMessage_NONE *header;
-
-  public:
-    std::shared_ptr<mpicommon::Message> message;
-
-    MasterTileMessageBuilder(OSPFrameBufferFormat fmt, bool hasDepth,
-        bool hasNormal, bool hasAlbedo,
-        vec2i coords, float error)
-      : colorFormat(fmt), hasDepth(hasDepth),
-        hasNormal(hasNormal), hasAlbedo(hasAlbedo)
-    {
-      int command = 0;
-      size_t msgSize = 0;
-      switch (colorFormat) {
-        case OSP_FB_NONE:
-          throw std::runtime_error("Do not use per tile message for FB_NONE!");
-        case OSP_FB_RGBA8:
-        case OSP_FB_SRGBA:
-          command = MASTER_WRITE_TILE_I8;
-          msgSize = sizeof(MasterTileMessage_RGBA_I8);
-          pixelSize = sizeof(uint32);
-          break;
-        case OSP_FB_RGBA32F:
-          command = MASTER_WRITE_TILE_F32;
-          msgSize = sizeof(MasterTileMessage_RGBA_F32);
-          pixelSize = sizeof(vec4f);
-          break;
-      }
-      // AUX also includes depth
-      if (hasDepth || hasNormal || hasAlbedo) {
-        msgSize += sizeof(float) * TILE_SIZE * TILE_SIZE;
-        if (hasDepth)
-          command |= MASTER_TILE_HAS_DEPTH;
-      }
-      if (hasNormal || hasAlbedo) {
-        msgSize += 2 * sizeof(vec3f) * TILE_SIZE * TILE_SIZE;
-        command |= MASTER_TILE_HAS_AUX;
-      }
-      message = std::make_shared<mpicommon::Message>(msgSize);
-      header = reinterpret_cast<MasterTileMessage_NONE*>(message->data);
-      header->command = command;
-      header->coords = coords;
-      header->error = error;
-    }
-    void setColor(const vec4f *color) {
-      if (colorFormat != OSP_FB_NONE) {
-        const uint8_t *input = reinterpret_cast<const uint8_t*>(color);
-        uint8_t *out = message->data + sizeof(MasterTileMessage_NONE);
-        std::copy(input, input + pixelSize * TILE_SIZE * TILE_SIZE, out);
-      }
-    }
-    void setDepth(const float *depth) {
-      if (hasDepth) {
-        float *out = reinterpret_cast<float*>(message->data
-                     + sizeof(MasterTileMessage_NONE)
-                     + pixelSize * TILE_SIZE * TILE_SIZE);
-        std::copy(depth, depth + TILE_SIZE * TILE_SIZE, out);
-      }
-    }
-    void setNormal(const vec3f *normal) {
-      if (hasNormal) {
-        auto out = reinterpret_cast<vec3f*>(message->data
-                     + sizeof(MasterTileMessage_NONE)
-                     + pixelSize * TILE_SIZE * TILE_SIZE
-                     + sizeof(float) * TILE_SIZE * TILE_SIZE);
-        std::copy(normal, normal + TILE_SIZE * TILE_SIZE, out);
-      }
-    }
-    void setAlbedo(const vec3f *albedo) {
-      if (hasAlbedo) {
-        auto out = reinterpret_cast<vec3f*>(message->data
-                     + sizeof(MasterTileMessage_NONE)
-                     + pixelSize * TILE_SIZE * TILE_SIZE
-                     + sizeof(float) * TILE_SIZE * TILE_SIZE
-                     + sizeof(vec3f) * TILE_SIZE * TILE_SIZE);
-        std::copy(albedo, albedo + TILE_SIZE * TILE_SIZE, out);
-      }
-    }
-  };
-
-  /*! message sent from one node's instance to another, to tell that
-      instance to write that tile */
-  struct WriteTileMessage : public TileMessage
-  {
-    // TODO: add compression of pixels during transmission
-    vec2i coords; // XXX redundant: it's also in tile.region.lower
-    ospray::Tile tile;
-  };
+//  struct TileMessage
+//  {
+//    int command {-1};
+//  };
+//
+//  struct MasterTileMessage : public TileMessage
+//  {
+//    vec2i coords;
+//    float error;
+//  };
+//
+//  struct AllTilesDoneMessage : public TileMessage
+//  {
+//      int numTiles {0};
+//
+//      vec2i* tileIDs(ospcommon::byte_t* data)
+//      {
+//          return (vec2i*)(data + sizeof(TileMessage) + sizeof(int));
+//      }
+//
+//      float* tileErrors(ospcommon::byte_t* data)
+//      {
+//          return (float*)(data + sizeof(TileMessage) + sizeof(int) + numTiles * sizeof(vec2i));
+//      }
+//
+//      static size_t size(const size_t numTiles)
+//      {
+//          return sizeof(TileMessage) + sizeof(int) + sizeof(int) +
+//                  numTiles * (sizeof(vec2i) + sizeof(float));
+//      }
+//  };
+//
+//  /*! message sent to the master when a tile is finished. TODO:
+//      compress the color data */
+//  template <typename ColorT>
+//  struct MasterTileMessage_FB : public MasterTileMessage
+//  {
+//    ColorT color[TILE_SIZE * TILE_SIZE];
+//  };
+//
+//  template <typename ColorT>
+//  struct MasterTileMessage_FB_Depth : public MasterTileMessage_FB<ColorT>
+//  {
+//    float depth[TILE_SIZE * TILE_SIZE];
+//  };
+//
+//  template <typename ColorT>
+//  struct MasterTileMessage_FB_Depth_Aux : public MasterTileMessage_FB_Depth<ColorT>
+//  {
+//    vec3f normal[TILE_SIZE * TILE_SIZE];
+//    vec3f albedo[TILE_SIZE * TILE_SIZE];
+//  };
+//
+//  using MasterTileMessage_RGBA_I8    = MasterTileMessage_FB<uint32>;
+//  using MasterTileMessage_RGBA_I8_Z  = MasterTileMessage_FB_Depth<uint32>;
+//  using MasterTileMessage_RGBA8_Z_AUX = MasterTileMessage_FB_Depth_Aux<uint32>;
+//  using MasterTileMessage_RGBA_F32   = MasterTileMessage_FB<vec4f>;
+//  using MasterTileMessage_RGBA_F32_Z = MasterTileMessage_FB_Depth<vec4f>;
+//  using MasterTileMessage_RGBAF32_Z_AUX = MasterTileMessage_FB_Depth_Aux<vec4f>;
+//  using MasterTileMessage_NONE       = MasterTileMessage;
+//
+//  /*! It's a real PITA do try and do this using the message structs
+//   * but keep them POD and also try to not copy a ton.
+//   */
+//  class MasterTileMessageBuilder
+//  {
+//    OSPFrameBufferFormat colorFormat;
+//    bool hasDepth;
+//    bool hasNormal;
+//    bool hasAlbedo;
+//    size_t pixelSize;
+//    MasterTileMessage_NONE *header;
+//
+//  public:
+//    std::shared_ptr<mpicommon::Message> message;
+//
+//    MasterTileMessageBuilder(OSPFrameBufferFormat fmt, bool hasDepth,
+//        bool hasNormal, bool hasAlbedo,
+//        vec2i coords, float error)
+//      : colorFormat(fmt), hasDepth(hasDepth),
+//        hasNormal(hasNormal), hasAlbedo(hasAlbedo)
+//    {
+//      int command = 0;
+//      size_t msgSize = 0;
+//      switch (colorFormat) {
+//        case OSP_FB_NONE:
+//          throw std::runtime_error("Do not use per tile message for FB_NONE!");
+//        case OSP_FB_RGBA8:
+//        case OSP_FB_SRGBA:
+//          command = MASTER_WRITE_TILE_I8;
+//          msgSize = sizeof(MasterTileMessage_RGBA_I8);
+//          pixelSize = sizeof(uint32);
+//          break;
+//        case OSP_FB_RGBA32F:
+//          command = MASTER_WRITE_TILE_F32;
+//          msgSize = sizeof(MasterTileMessage_RGBA_F32);
+//          pixelSize = sizeof(vec4f);
+//          break;
+//      }
+//      // AUX also includes depth
+//      if (hasDepth || hasNormal || hasAlbedo) {
+//        msgSize += sizeof(float) * TILE_SIZE * TILE_SIZE;
+//        if (hasDepth)
+//          command |= MASTER_TILE_HAS_DEPTH;
+//      }
+//      if (hasNormal || hasAlbedo) {
+//        msgSize += 2 * sizeof(vec3f) * TILE_SIZE * TILE_SIZE;
+//        command |= MASTER_TILE_HAS_AUX;
+//      }
+//      message = std::make_shared<mpicommon::Message>(msgSize);
+//      header = reinterpret_cast<MasterTileMessage_NONE*>(message->data);
+//      header->command = command;
+//      header->coords = coords;
+//      header->error = error;
+//    }
+//    void setColor(const vec4f *color) {
+//      if (colorFormat != OSP_FB_NONE) {
+//        const uint8_t *input = reinterpret_cast<const uint8_t*>(color);
+//        uint8_t *out = message->data + sizeof(MasterTileMessage_NONE);
+//        std::copy(input, input + pixelSize * TILE_SIZE * TILE_SIZE, out);
+//      }
+//    }
+//    void setDepth(const float *depth) {
+//      if (hasDepth) {
+//        float *out = reinterpret_cast<float*>(message->data
+//                     + sizeof(MasterTileMessage_NONE)
+//                     + pixelSize * TILE_SIZE * TILE_SIZE);
+//        std::copy(depth, depth + TILE_SIZE * TILE_SIZE, out);
+//      }
+//    }
+//    void setNormal(const vec3f *normal) {
+//      if (hasNormal) {
+//        auto out = reinterpret_cast<vec3f*>(message->data
+//                     + sizeof(MasterTileMessage_NONE)
+//                     + pixelSize * TILE_SIZE * TILE_SIZE
+//                     + sizeof(float) * TILE_SIZE * TILE_SIZE);
+//        std::copy(normal, normal + TILE_SIZE * TILE_SIZE, out);
+//      }
+//    }
+//    void setAlbedo(const vec3f *albedo) {
+//      if (hasAlbedo) {
+//        auto out = reinterpret_cast<vec3f*>(message->data
+//                     + sizeof(MasterTileMessage_NONE)
+//                     + pixelSize * TILE_SIZE * TILE_SIZE
+//                     + sizeof(float) * TILE_SIZE * TILE_SIZE
+//                     + sizeof(vec3f) * TILE_SIZE * TILE_SIZE);
+//        std::copy(albedo, albedo + TILE_SIZE * TILE_SIZE, out);
+//      }
+//    }
+//  };
+//
+//  /*! message sent from one node's instance to another, to tell that
+//      instance to write that tile */
+//  struct WriteTileMessage : public TileMessage
+//  {
+//    // TODO: add compression of pixels during transmission
+//    vec2i coords; // XXX redundant: it's also in tile.region.lower
+//    ospray::Tile tile;
+//  };
 
   // DistributedTileError definitions /////////////////////////////////////////
 

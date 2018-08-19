@@ -36,6 +36,9 @@
 #include "ospcommon/networking/Socket.h"
 #include "ospcommon/utility/getEnvVar.h"
 
+
+#include "common/setup.h"
+
 // std
 #ifndef _WIN32
 #  include <unistd.h> // for fork()
@@ -63,6 +66,9 @@ namespace ospray {
     void runWorker();
 
     // Misc helper functions //////////////////////////////////////////////////
+
+
+#if 0 /// Code migrated to setup.h
 
     static inline void throwIfNotMpiParallel()
     {
@@ -130,6 +136,7 @@ namespace ospray {
       //   another ("worker")
       // - all processes (incl app) have barrier'ed, and thus now in sync.
     }
+#endif
 
     // MPI initialization helper functions ////////////////////////////////////
 

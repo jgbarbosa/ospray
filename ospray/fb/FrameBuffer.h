@@ -33,6 +33,7 @@ namespace ospray {
     FrameBuffer(const vec2i &size,
                 ColorBufferFormat colorBufferFormat,
                 const uint32 channels);
+
     virtual ~FrameBuffer() override = default;
 
     virtual const void *mapBuffer(OSPFrameBufferChannel channel) = 0;
