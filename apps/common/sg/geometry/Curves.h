@@ -16,49 +16,24 @@
 
 #pragma once
 
-// sg
-#include "Node.h"
-#include "Data.h"
-// ospcommon
-#include "ospcommon/FileName.h"
+#include "Geometry.h"
 
 namespace ospray {
   namespace sg {
 
-    /*! \brief C++ wrapper for a 2D Texture */
-    struct OSPSG_INTERFACE Texture2D : public Node
+    struct OSPSG_INTERFACE Curves : public sg::Geometry
     {
-      /*! constructor */
-      Texture2D();
-      ~Texture2D() override = default;
-
-      virtual void preCommit(RenderContext &ctx) override;
+      Curves();
 
       /*! \brief returns a std::string with the c++ name of this class */
       std::string toString() const override;
 
-      //! \brief load texture from given file.
-      /*! \detailed if file does not exist, or cannot be loaded for
-          some reason, return NULL. Multiple loads from the same file
-          will return the *same* texture object */
-      static std::shared_ptr<Texture2D> load(const FileName &fileName,
-                                             const bool preferLinear = false,
-                                             const bool nearestFilter = false);
-      static void clearTextureCache();
+      box3f computeBounds() const override;
 
-      //! texture size, in pixels
-      vec2i size {-1};
-      int channels{0};
-      int depth{0};
-      bool preferLinear{false};
-      bool nearestFilter{false};
-
-      std::shared_ptr<sg::DataBuffer> texelData;
-      void* data{nullptr};
-
-      std::string ospTextureType {"texture2d"};
-      static std::map<std::string,std::shared_ptr<Texture2D> > textureCache;
+      void preCommit(RenderContext& ctx) override;
     };
 
   } // ::ospray::sg
 } // ::ospray
+
+

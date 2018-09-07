@@ -47,6 +47,7 @@ namespace ospray {
     void startAsyncRendering() override;
 
     void setViewportToSgCamera();
+    void setDefaultViewportToCurrent();
 
   protected:
 
@@ -70,19 +71,10 @@ namespace ospray {
     void guiMenuView();
     void guiMenuMPI();
 
-    void guiCarDemo();
-
     void guiRenderStats();
     void guiRenderCustomWidgets();
     void guiTransferFunction();
     void guiFindNode();
-
-    void guiSingleNode(const std::string &baseText,
-                       std::shared_ptr<sg::Node> node);
-    void guiNodeContextMenu(const std::string &name,
-                            std::shared_ptr<sg::Node> node);
-
-    void guiSGTree(const std::string &name, std::shared_ptr<sg::Node> node);
 
     void guiSearchSGNodes();
 
@@ -93,7 +85,6 @@ namespace ospray {
     double lastGUITime;
     double lastDisplayTime;
     double lastTotalTime;
-    float lastVariance;
 
     imgui3D::ImGui3DWidget::ViewPort originalView;
     bool saveScreenshot {false}; // write next mapped framebuffer to disk

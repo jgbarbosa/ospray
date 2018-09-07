@@ -228,14 +228,15 @@ Modules are searched in OS-dependent paths. `ospLoadModule` returns
 
 ### Shutting Down OSPRay
 
-When the application is finished using OSPRay (typically on application exit),
-the OSPRay API should be finalized with
+When the application is finished using OSPRay (typically on application
+exit), the OSPRay API should be finalized with
 
     void ospShutdown();
 
-This API call ensures that the current device is cleaned up appropriately. Due
-to static object allocation having non-deterministic ordering, it is recommended
-that applications call `ospShutdown()` before the calling application process
+This API call ensures that the current device is cleaned up
+appropriately. Due to static object allocation having non-deterministic
+ordering, it is recommended that applications call `ospShutdown()`
+before the calling application process
 terminates.
 
 Objects
@@ -401,41 +402,43 @@ or else an `OSPVolume` handle.
 The common parameters understood by all volume variants are summarized
 in the table below.
 
-  ------ ------------------------ ---------  -----------------------------------
-  Type   Name                       Default  Description
-  ------ ------------------------ ---------  -----------------------------------
-  vec2f  voxelRange                          minimum and maximum of the scalar
-                                             values
+  ------------------- ------------------------ ---------  -----------------------------------
+  Type                Name                       Default  Description
+  ------------------- ------------------------ ---------  -----------------------------------
+  OSPTransferFunction transferFunction                    [transfer function] to use
 
-  bool   gradientShadingEnabled       false  volume is rendered with surface
-                                             shading wrt. to normalized gradient
+  vec2f               voxelRange                          minimum and maximum of the scalar
+                                                          values
 
-  bool   preIntegration               false  use pre-integration for
-                                             [transfer function] lookups
+  bool                gradientShadingEnabled       false  volume is rendered with surface
+                                                          shading wrt. to normalized gradient
 
-  bool   singleShade                   true  shade only at the point of maximum
-                                             intensity
+  bool                preIntegration               false  use pre-integration for
+                                                          [transfer function] lookups
 
-  bool   adaptiveSampling              true  adapt ray step size based on
-                                             opacity
+  bool                singleShade                   true  shade only at the point of maximum
+                                                          intensity
 
-  float  adaptiveScalar                  15  modifier for adaptive step size
+  bool                adaptiveSampling              true  adapt ray step size based on
+                                                          opacity
 
-  float  adaptiveMaxSamplingRate          2  maximum sampling rate for adaptive
-                                             sampling
+  float               adaptiveScalar                  15  modifier for adaptive step size
 
-  float  samplingRate                 0.125  sampling rate of the volume (this
-                                             is the minimum step size for
-                                             adaptive sampling)
+  float               adaptiveMaxSamplingRate          2  maximum sampling rate for adaptive
+                                                          sampling
 
-  vec3f  specular                  gray 0.3  specular color for shading
+  float               samplingRate                 0.125  sampling rate of the volume (this
+                                                          is the minimum step size for
+                                                          adaptive sampling)
 
-  vec3f  volumeClippingBoxLower    disabled  lower coordinate (in object-space)
-                                             to clip the volume values
+  vec3f               specular                  gray 0.3  specular color for shading
 
-  vec3f  volumeClippingBoxUpper    disabled  upper coordinate (in object-space)
-                                             to clip the volume values
-  ------ ------------------------ ---------  -----------------------------------
+  vec3f               volumeClippingBoxLower    disabled  lower coordinate (in object-space)
+                                                          to clip the volume values
+
+  vec3f               volumeClippingBoxUpper    disabled  upper coordinate (in object-space)
+                                                          to clip the volume values
+  ------------------- ------------------------ ---------  -----------------------------------
   : Configuration parameters shared by all volume types.
 
 Note that if `voxelRange` is not provided for a volume then OSPRay will
@@ -861,6 +864,36 @@ respectively, would internally correspond to five links (`A-B`, `B-C`,
 `C-D`, `E-F`, and `F-G`), and would be specified via an array of
 vertices `[A,B,C,D,E,F,G]`, plus an array of link indices `[0,1,2,4,5]`.
 
+### Curves
+
+A geometry consisting of multiple curves is created by calling
+`ospNewGeometry` with type string "`curves`".  The parameters defining
+this geometry are listed in the table below.
+
+  ------------------ --------------- -------------------------------------------
+  Type               Name            Description
+  ------------------ --------------- -------------------------------------------
+  string             curveType       "flat" (ray oriented),
+                                     "round" (circular cross section),
+                                     "ribbon" (normal oriented flat curve)
+
+  string             curveBasis      "linear", "bezier", "bspline", "hermite"
+
+  vec4f[]            vertex          [data] array of vertex position and radius
+
+  int32[]            index           [data] array of indices to the first vertex
+                                     or tangent of a curve segment
+
+  vec3f[]            vertex.normal   [data] array of curve normals (only for
+                                     "ribbon" curves)
+
+  vec3f[]            vertex.tangent  [data] array of curve tangents (only for
+                                     "hermite" curves)
+  ------------------ --------------- -------------------------------------------
+  : Parameters defining a curves geometry.
+
+See Embree documentation for discussion of curve types and data formatting.
+
 ### Isosurfaces
 
 OSPRay can directly render multiple isosurfaces of a volume without
@@ -1078,7 +1111,7 @@ feature/performance trade-offs:
 To let the given `renderer` create a new light source of given type
 `type` use
 
-    OSPLight ospNewLight(OSPRenderer renderer, const char *type);
+    OSPLight ospNewLight2(const char *renderer_type, const char *type);
 
 The call returns `NULL` if that type of light is not known by the
 renderer, or else an `OSPLight` handle to the created light source.
@@ -1102,7 +1135,7 @@ not about `color`.
 The distant light (or traditionally the directional light) is thought to
 be very far away (outside of the scene), thus its light arrives (almost)
 as parallel rays. It is created by passing the type string "`distant`"
-to `ospNewLight`. In addition to the [general parameters](#lights)
+to `ospNewLight2`. In addition to the [general parameters](#lights)
 understood by all lights the distant light supports the following special
 parameters:
 
@@ -1121,7 +1154,7 @@ tracer]). For instance, the apparent size of the sun is about 0.53°.
 
 The sphere light (or the special case point light) is a light emitting
 uniformly in all directions. It is created by passing the type string
-"`sphere`" to `ospNewLight`. In addition to the [general
+"`sphere`" to `ospNewLight2`. In addition to the [general
 parameters](#lights) understood by all lights the sphere light supports
 the following special parameters:
 
@@ -1139,7 +1172,7 @@ tracer]).
 #### Spot Light
 
 The spot light is a light emitting into a cone of directions. It is
-created by passing the type string "`spot`" to `ospNewLight`. In
+created by passing the type string "`spot`" to `ospNewLight2`. In
 addition to the [general parameters](#lights) understood by all lights
 the spot light supports the special parameters listed in the table.
 
@@ -1173,7 +1206,7 @@ tracer]).
 
 The quad^[actually a parallelogram] light is a planar, procedural area light source emitting
 uniformly on one side into the half space. It is created by passing the
-type string "`quad`" to `ospNewLight`. In addition to the [general
+type string "`quad`" to `ospNewLight2`. In addition to the [general
 parameters](#lights) understood by all lights the spot light supports
 the following special parameters:
 
@@ -1197,7 +1230,7 @@ shadows.
 
 The HDRI light is a textured light source surrounding the scene and
 illuminating it from infinity. It is created by passing the type string
-"`hdri`" to `ospNewLight`. In addition to the [parameter
+"`hdri`" to `ospNewLight2`. In addition to the [parameter
 `intensity`](#lights) the HDRI light supports the following special
 parameters:
 
@@ -1222,7 +1255,7 @@ Note that the currently only the [path tracer] supports the HDRI light.
 The ambient light surrounds the scene and illuminates it from infinity
 with constant radiance (determined by combining the [parameters `color`
 and `intensity`](#lights)). It is created by passing the type string
-"`ambient`" to `ospNewLight`.
+"`ambient`" to `ospNewLight2`.
 
 Note that the [SciVis renderer] uses ambient lights to control the color
 and intensity of the computed ambient occlusion (AO).
@@ -1362,7 +1395,9 @@ listed in the table below.
   float  rotation                   0  rotation of the direction of anisotropy in [0–1], 1 is
                                        going full circle
 
-  float  normal                     1  normal map/scale
+  float  normal                     1  default normal map/scale for all layers
+
+  float  baseNormal                 1  base normal map/scale (overrides default normal)
 
   bool   thin                   false  flag specifying whether the material is thin or solid
 
@@ -1384,11 +1419,13 @@ listed in the table below.
 
   float  coatRoughness              0  clear coat roughness in [0–1], 0 is perfectly smooth
 
-  float  coatNormal                 1  clear coat normal map/scale
+  float  coatNormal                 1  clear coat normal map/scale (overrides default normal)
 
   float  sheen                      0  sheen layer weight in [0–1]
 
   vec3f  sheenColor             white  sheen color tint
+
+  float  sheenTint                  0  how much sheen is tinted from sheenColor towards baseColor
 
   float  sheenRoughness           0.2  sheen roughness in [0–1], 0 is perfectly smooth
 
@@ -1632,17 +1669,17 @@ thus individual flakes are not visible.
 The [path tracer] supports the Luminous material which emits light
 uniformly in all directions and which can thus be used to turn any
 geometric object into a light source. It is created by passing the type
-string "`Luminous`" to `ospNewMaterial2`. The amount of constant radiance
-that is emitted is determined by combining the general parameters of
-lights: [`color` and `intensity`](#lights).
+string "`Luminous`" to `ospNewMaterial2`. The amount of constant
+radiance that is emitted is determined by combining the general
+parameters of lights: [`color` and `intensity`](#lights).
 
 ![Rendering of a yellow Luminous material.][imgMaterialLuminous]
 
 ### Texture
 
-OSPRay currently implements only one texture type (`texture2d`), but is open
-for extension to other types by applications. More types may be added in future
-releases.
+OSPRay currently implements two texture types (`texture2d` and `volume`) and is
+open for extension to other types by applications. More types may be
+added in future releases.
 
 To create a new texture use
 
@@ -1650,7 +1687,12 @@ To create a new texture use
 
 The call returns `NULL` if the texture could not be created with the
 given parameters, or else an `OSPTexture` handle to the created
-texture. Parameters
+texture.
+
+#### Texture2D
+
+The `texture2D` texture type implements an image-based texture, where its
+parameters are as follows
 
   Type    Name         Description
   ------- ------------ ----------------------------------
@@ -1681,12 +1723,28 @@ The supported texture formats for `texture2d` are:
   of type `OSPTextureFormat`.
 
 The texel data addressed by `source` starts with the texels in the lower
-left corner of the texture image, like in OpenGL. Per default a texture fetch is
-filtered by performing bi-linear interpolation of the nearest 2×2
-texels; if instead fetching only the nearest texel is desired (i.e. no
-filtering) then pass the `OSP_TEXTURE_FILTER_NEAREST` flag.
+left corner of the texture image, like in OpenGL. Per default a texture
+fetch is filtered by performing bi-linear interpolation of the nearest
+2×2 texels; if instead fetching only the nearest texel is desired (i.e.
+no filtering) then pass the `OSP_TEXTURE_FILTER_NEAREST` flag.
 
-### Texture Transformations
+#### TextureVolume
+
+The `volume` texture type implements texture lookups based on 3D world
+coordinates of the surface hit point on the associated geometry. If the given
+hit point is within the attached volume, the volume is sampled and classified
+with the transfer function attached to the volume. This implements the ability
+to visualize volume values (as colored by its transfer function) on arbitrary
+surfaces inside the volume (as opposed to an isosurface showing a particular
+value in the volume). Its parameters are as follows
+
+  Type      Name         Description
+  --------- ------------ -------------------------------------------
+  OSPVolume volume       volume used to generate color lookups
+  --------- ------------ -------------------------------------------
+  : Parameters of `volume` texture type
+
+### Texture2D Transformations
 
 All materials with textures also offer to manipulate the placement of
 these textures with the help of texture transformations. If so, this
