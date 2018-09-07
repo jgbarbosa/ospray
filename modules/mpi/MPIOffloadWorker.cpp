@@ -100,7 +100,7 @@ namespace ospray {
 
       \internal We ssume that mpi::worker and mpi::app have already been set up
     */
-    void runWorker()
+    void runWorker(work::WorkTypeRegistry &registry)
     {
       auto &device = ospray::api::Device::current;
 

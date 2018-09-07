@@ -36,6 +36,7 @@
 #include "ospcommon/networking/Socket.h"
 #include "ospcommon/utility/getEnvVar.h"
 
+#include "mpi/MPOffloadWorker.h"
 
 #include "common/setup.h"
 
@@ -63,7 +64,7 @@ namespace ospray {
     /*! it's up to the proper init routine to decide which processes
       call this function and which ones don't. This function will not
       return. */
-    void runWorker();
+    //void runWorker();
 
     // Misc helper functions //////////////////////////////////////////////////
 
@@ -171,7 +172,7 @@ namespace ospray {
         - this fct is called from ospInit (with ranksBecomeWorkers=true) or
           from ospdMpiInit (w/ ranksBecomeWorkers = false)
     */
-    void createMPI_RanksBecomeWorkers(int *ac, const char **av)
+    void createMPI_RanksBecomeWorkers(int *ac, const char **av,work::WorkTypeRegistry& workRegistry)
     {
       mpi::init(ac,av,true);
 
@@ -189,7 +190,7 @@ namespace ospray {
 
         // now, all workers will enter their worker loop (ie, they will *not*
         // return)
-        mpi::runWorker();
+        ospray::mpi::runWorker(workRegistry);
         throw std::runtime_error("should never reach here!");
         /* no return here - 'runWorker' will never return */
       }
@@ -257,7 +258,7 @@ namespace ospray {
     }
 
     void createMPI_connectToListener(int *ac, const char **av,
-                                     const std::string &host)
+                                     const std::string &host, work::WorkTypeRegistry& workRegistry)
     {
       mpi::init(ac,av,true);
 
@@ -294,7 +295,7 @@ namespace ospray {
       mpi::world.barrier();
 
       postStatusMsg("starting worker...", OSPRAY_MPI_VERBOSE_LEVEL);
-      mpi::runWorker();
+      mpi::runWorker(workRegistry);
     }
 
     /*! in this mode ("separate worker group" mode)
@@ -408,7 +409,7 @@ namespace ospray {
       std::string mode = getParam<std::string>("mpiMode", "mpi");
 
       if (mode == "mpi") {
-        createMPI_RanksBecomeWorkers(&_ac,_av);
+        createMPI_RanksBecomeWorkers(&_ac,_av, workRegistry);
       } else if(mode == "mpi-launch") {
         std::string launchCommand = getParam<std::string>("launchCommand", "");
 
@@ -429,7 +430,7 @@ namespace ospray {
                                    "where the master is listening at!");
         }
 
-        createMPI_connectToListener(&_ac,_av,portName);
+        createMPI_connectToListener(&_ac,_av,portName,workRegistry);
       } else {
         throw std::runtime_error("Invalid MPI mode!");
       }

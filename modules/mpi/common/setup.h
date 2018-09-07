@@ -9,8 +9,6 @@
 namespace ospray {
     namespace mpi {
 
-//        void runWorker(work::WorkTypeRegistry&);
-
         static inline void throwIfNotMpiParallel()
         {
             if (mpicommon::world.size <= 1) {
