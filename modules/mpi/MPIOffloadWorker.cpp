@@ -67,7 +67,7 @@ namespace ospray {
       throw std::runtime_error(msg.str());
     }
 
-    std::unique_ptr<work::Work> readWork(work::WorkTypeRegistry &registry,
+    std::unique_ptr<work::Work> readWork(work::WorkTypeRegistry &workTypeRegistry,
                                          networking::ReadStream &readStream)
     {
       work::Work::tag_t tag;
@@ -78,8 +78,8 @@ namespace ospray {
           << "#osp.mpi.worker: got work #" << numWorkReceived++
           << ", tag " << tag;
 
-      auto make_work = registry.find(tag);
-      if (make_work == registry.end()) {
+      auto make_work = workTypeRegistry.find(tag);
+      if (make_work == workTypeRegistry.end()) {
         std::stringstream msg;
         msg << "Invalid work type received - tag #: " << tag << "\n";
         postStatusMsg(msg);
@@ -100,7 +100,7 @@ namespace ospray {
 
       \internal We ssume that mpi::worker and mpi::app have already been set up
     */
-    void runWorker(work::WorkTypeRegistry &registry)
+    void runWorker(work::WorkTypeRegistry &workTypeRegistry)
     {
       auto &device = ospray::api::Device::current;
 
@@ -142,9 +142,6 @@ namespace ospray {
       auto mpiFabric  = make_unique<MPIBcastFabric>(mpi::app, MPI_ROOT, 0);
       auto readStream = make_unique<networking::BufferedReadStream>(*mpiFabric);
 
-      // create registry of work item types
-      std::map<work::Work::tag_t,work::CreateWorkFct> workTypeRegistry;
-      work::registerOSPWorkItems(workTypeRegistry);
 
       while (1) {
         auto work = readWork(workTypeRegistry, *readStream);
