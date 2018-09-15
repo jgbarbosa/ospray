@@ -274,7 +274,7 @@ namespace ospray {
     void setTile(ospray::Tile &tile) override;
 
     void startNewFrame(const float errorThreshold);
-    void closeCurrentFrame();
+    virtual void closeCurrentFrame();
 
     void waitUntilFinished();
 
@@ -313,7 +313,7 @@ namespace ospray {
       /*! Offloads processing of incoming message to tasking system */
       virtual void scheduleProcessing(const std::shared_ptr<mpicommon::Message> &message);
 
-  private:
+  protected:
 
     friend struct TileData;
     friend struct WriteMultipleTile;
