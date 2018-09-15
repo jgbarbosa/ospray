@@ -13,12 +13,15 @@ Version History
 -   Applications can get information about the progress of rendering the
     current frame, and optionally cancel it, by registering a callback
     function via `ospSetProgressFunc()`
+-   Lights are not tied to the renderer type, so a new function `ospNewLight3()`
+    was introduced to implement this. Please convert all uses of `ospNewLight()`
+    and/or `ospNewLight2()` to `ospNewLight3()`
 -   Added sheenTint parameter to Principled material
 -   Added baseNormal parameter to Principled material
 -   Added low-discrepancy sampling to path tracer
--   Fixed documentation for `ospNewLight()`, which was replaced in v1.5.0 with
-    `ospNewLight2()` in the same way `ospNewMaterial()` was replaced by
-    `ospNewMaterial2()`
+-   The `spp` parameter on the renderer no longer supports values less than 1,
+    instead applications should render to a separate, lower resolution
+    frame buffer during interaction to achieve the same behavior
 
 ### Changes in v1.6.1:
 

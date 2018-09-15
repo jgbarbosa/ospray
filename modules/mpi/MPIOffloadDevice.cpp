@@ -744,11 +744,11 @@ namespace ospray {
     }
 
     /*! have given renderer create a new material */
-    OSPMaterial MPIOffloadDevice::newMaterial(OSPRenderer _renderer,
-                                              const char *type)
+    OSPMaterial MPIOffloadDevice::newMaterial(OSPRenderer renderer,
+                                              const char *material_type)
     {
       ObjectHandle handle = allocateHandle();
-      work::NewMaterial work(type, _renderer, handle);
+      work::NewMaterial work(renderer, material_type, handle);
       processWork(work);
       return (OSPMaterial)(int64)handle;
     }
@@ -774,20 +774,10 @@ namespace ospray {
     }
 
     /*! have given renderer create a new Light */
-    OSPLight MPIOffloadDevice::newLight(OSPRenderer _renderer, const char *type)
+    OSPLight MPIOffloadDevice::newLight(const char *type)
     {
       ObjectHandle handle = allocateHandle();
-      work::NewLight work(type, _renderer, handle);
-      processWork(work);
-      return (OSPLight)(int64)handle;
-    }
-
-    /*! have given renderer create a new Light */
-    OSPLight MPIOffloadDevice::newLight(const char *renderer_type,
-                                        const char *light_type)
-    {
-      ObjectHandle handle = allocateHandle();
-      work::NewLight2 work(renderer_type, light_type, handle);
+      work::NewLight work(type, handle);
       processWork(work);
       return (OSPLight)(int64)handle;
     }

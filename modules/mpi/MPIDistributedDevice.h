@@ -48,11 +48,7 @@ namespace ospray {
       OSPTransferFunction newTransferFunction(const char *type) override;
 
       /*! have given renderer create a new Light */
-      OSPLight newLight(OSPRenderer _renderer, const char *type) override;
-
-      /*! have given renderer create a new Light */
-      OSPLight newLight(const char *renderer_type,
-                        const char *light_type) override;
+      OSPLight newLight(const char *light_type) override;
 
       /*! map frame buffer */
       const void *frameBufferMap(OSPFrameBuffer fb,
@@ -170,7 +166,8 @@ namespace ospray {
       OSPGeometry newGeometry(const char *type) override;
 
       /*! have given renderer create a new material */
-      OSPMaterial newMaterial(OSPRenderer _renderer, const char *type) override;
+      OSPMaterial newMaterial(OSPRenderer renderer,
+                              const char *material_type) override;
 
       /*! have given renderer create a new material */
       OSPMaterial newMaterial(const char *renderer_type,

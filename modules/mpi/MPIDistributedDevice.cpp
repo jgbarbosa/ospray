@@ -370,9 +370,11 @@ namespace ospray {
       NOT_IMPLEMENTED;
     }
 
-    OSPMaterial MPIDistributedDevice::newMaterial(const char *, const char *)
+    OSPMaterial MPIDistributedDevice::newMaterial(const char *renderer_type,
+                                                  const char *material_type)
     {
-      NOT_IMPLEMENTED;
+      auto *instance = Material::createInstance(renderer_type, material_type);
+      return (OSPMaterial)instance;
     }
 
     OSPTransferFunction
@@ -382,30 +384,10 @@ namespace ospray {
                                OSPTransferFunction>(type);
     }
 
-    OSPLight MPIDistributedDevice::newLight(OSPRenderer _renderer,
-                                            const char *type)
+    OSPLight MPIDistributedDevice::newLight(const char *type)
     {
-      auto &renderer = lookupDistributedObject<Renderer>(_renderer);
-      auto *light    = renderer.createLight(type);
-
-      if (light == nullptr)
-        light = Light::createLight(type);
-
-      if (light) {
-        return (OSPLight)light;
-      } else {
-        return nullptr;
-      }
+      return createLocalObject<Light, OSPLight>(type);
     }
-
-    OSPLight MPIDistributedDevice::newLight(const char *renderer_type,
-                                            const char *light_type)
-    {
-      auto renderer = newRenderer(renderer_type);
-      auto light = newLight(renderer, light_type);
-      return light;
-    }
-
 
     void MPIDistributedDevice::removeGeometry(OSPModel _model,
                                               OSPGeometry _geometry)
@@ -452,14 +434,16 @@ namespace ospray {
       }
     }
 
-    void MPIDistributedDevice::setMaterial(OSPGeometry, OSPMaterial)
+    void MPIDistributedDevice::setMaterial(OSPGeometry _geom, OSPMaterial _mat)
     {
-      NOT_IMPLEMENTED;
+      auto *geom = lookupObject<Geometry>(_geom);
+      auto *mat  = lookupObject<Material>(_mat);
+      geom->setMaterial(mat);
     }
 
-    OSPTexture MPIDistributedDevice::newTexture(const char *)
+    OSPTexture MPIDistributedDevice::newTexture(const char *type)
     {
-      NOT_IMPLEMENTED;
+      return createLocalObject<Texture, OSPTexture>(type);
     }
 
     void MPIDistributedDevice::sampleVolume(float **,

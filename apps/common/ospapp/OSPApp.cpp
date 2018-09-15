@@ -281,7 +281,6 @@ usage --> "--generate:type[:parameter1=value,parameter2=value,...]"
         renderer["minContribution"] = 0.1f;
         renderer["maxDepth"] = 3;
 
-        framebuffer["toneMapping"] = false;
         framebuffer["useVarianceBuffer"] = false;
         addPlane = false;
       }
@@ -292,7 +291,12 @@ usage --> "--generate:type[:parameter1=value,parameter2=value,...]"
       addAnimatedImporterNodesToWorld(renderer);
 
       framebuffer["size"] = vec2i(width, height);
-      setupToneMapping(framebuffer);
+      auto &navFB = root.createChild("navFrameBuffer", "FrameBuffer");
+      navFB["useAccumBuffer"] = false;
+      navFB["useVarianceBuffer"] = false;
+
+      setupToneMapping(framebuffer, navFB);
+
       root.traverse(sg::VerifyNodes(true));
       root.commit();
 
@@ -809,25 +813,26 @@ usage --> "--generate:type[:parameter1=value,parameter2=value,...]"
         camera["aspect"] = width / (float)height;
     }
 
-    void OSPApp::setupToneMapping(sg::Node &frameBuffer)
+    void OSPApp::setupToneMapping(sg::Node &frameBuffer, sg::Node &fb2)
     {
+      auto &toneMapper = frameBuffer.createChild("toneMapper", "ToneMapper");
+      toneMapper["enabled"] = !fast;
       if (aces) {
-        frameBuffer["toneMapping"] = true;
-        frameBuffer["contrast"] = 1.6773f;
-        frameBuffer["shoulder"] = 0.9714f;
-        frameBuffer["midIn"] = 0.18f;
-        frameBuffer["midOut"] = 0.18f;
-        frameBuffer["hdrMax"] = 11.0785f;
-        frameBuffer["acesColor"] = true;
+        toneMapper["contrast"] = 1.6773f;
+        toneMapper["shoulder"] = 0.9714f;
+        toneMapper["midIn"] = 0.18f;
+        toneMapper["midOut"] = 0.18f;
+        toneMapper["hdrMax"] = 11.0785f;
+        toneMapper["acesColor"] = true;
       } else if (filmic) {
-        frameBuffer["toneMapping"] = true;
-        frameBuffer["contrast"] = 1.1759f;
-        frameBuffer["shoulder"] = 0.9746f;
-        frameBuffer["midIn"] = 0.18f;
-        frameBuffer["midOut"] = 0.18f;
-        frameBuffer["hdrMax"] = 6.3704f;
-        frameBuffer["acesColor"] = false;
+        toneMapper["contrast"] = 1.1759f;
+        toneMapper["shoulder"] = 0.9746f;
+        toneMapper["midIn"] = 0.18f;
+        toneMapper["midOut"] = 0.18f;
+        toneMapper["hdrMax"] = 6.3704f;
+        toneMapper["acesColor"] = false;
       }
+      fb2.setChild("toneMapper", toneMapper.shared_from_this());
     }
 
     void OSPApp::addAnimatedImporterNodesToWorld(sg::Node &renderer)
