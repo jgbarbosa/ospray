@@ -1,5 +1,5 @@
 ## ======================================================================== ##
-## Copyright 2017-2018 Intel Corporation                                    ##
+## Copyright 2017-2019 Intel Corporation                                    ##
 ##                                                                          ##
 ## Licensed under the Apache License, Version 2.0 (the "License");          ##
 ## you may not use this file except in compliance with the License.         ##
@@ -19,6 +19,10 @@ ospray_disable_compiler_warnings()
 ##############################################################
 # Google Test
 ##############################################################
+if (NOT USE_STATIC_RUNTIME)
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+endif()
+
 ospray_build_component(ospcommon/testing/gtest)
 
 mark_as_advanced(gtest_build_samples)

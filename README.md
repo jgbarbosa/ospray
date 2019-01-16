@@ -1,17 +1,19 @@
 OSPRay
 ======
 
-This is release v1.7.3 of OSPRay. For changes and new features see the
-[changelog](CHANGELOG.md). Also visit http://www.ospray.org for more
-information.
+This is release v1.8.0 (devel) of OSPRay. For changes and new features
+see the [changelog](CHANGELOG.md). Also visit http://www.ospray.org for
+more information.
 
 OSPRay Overview
 ===============
 
-OSPRay is an **o**pen source, **s**calable, and **p**ortable **ray**
-tracing engine for high-performance, high-fidelity visualization on
-Intel® Architecture CPUs. OSPRay is released under the permissive
-[Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0).
+Intel® OSPRay is an **o**pen source, **s**calable, and **p**ortable
+**ray** tracing engine for high-performance, high-fidelity visualization
+on Intel Architecture CPUs. OSPRay is part of the [Intel Rendering
+Framework](https://software.intel.com/en-us/rendering-framework) and is
+released under the permissive [Apache 2.0
+license](http://www.apache.org/licenses/LICENSE-2.0).
 
 The purpose of OSPRay is to provide an open, powerful, and easy-to-use
 rendering library that allows one to easily build applications that use
@@ -20,11 +22,12 @@ surface- and volume-based visualizations). OSPRay is completely
 CPU-based, and runs on anything from laptops, to workstations, to
 compute nodes in HPC systems.
 
-OSPRay internally builds on top of [Embree](https://embree.github.io/)
-and [ISPC (Intel® SPMD Program Compiler)](https://ispc.github.io/), and
-fully utilizes modern instruction sets like Intel® SSE4, AVX, AVX2, and
-AVX-512 to achieve high rendering performance, thus a CPU with support
-for at least SSE4.1 is required to run OSPRay.
+OSPRay internally builds on top of [Intel
+Embree](https://embree.github.io/) and [ISPC (Intel SPMD Program
+Compiler)](https://ispc.github.io/), and fully utilizes modern
+instruction sets like Intel SSE4, AVX, AVX2, and AVX-512 to achieve high
+rendering performance, thus a CPU with support for at least SSE4.1 is
+required to run OSPRay.
 
 OSPRay Support and Contact
 --------------------------
@@ -37,7 +40,7 @@ via [OSPRay’s GitHub Issue
 Tracker](https://github.com/ospray/OSPRay/issues) (or, if you should
 happen to have a fix for it,you can also send us a pull request); for
 missing features please contact us via email at
-<a href="mailto:ospray@googlegroups.com" class="email">ospray@googlegroups.com</a>.
+<ospray@googlegroups.com>.
 
 For recent news, updates, and announcements, please see our complete
 [news/updates](https://www.ospray.org/news.html) page.
@@ -84,10 +87,15 @@ before you can build OSPRay you need the following prerequisites:
     system, which we recommend for performance and flexibility reasons.
     Alternatively you can set CMake variable `OSPRAY_TASKING_SYSTEM` to
     `OpenMP`, `Internal`, or `Cilk` (icc only).
--   OSPRay also heavily uses [Embree](https://embree.github.io/),
+-   OSPRay also heavily uses Intel [Embree](https://embree.github.io/),
     installing version 3.2 or newer is required. If Embree is not found
     by CMake its location can be hinted with the variable `embree_DIR`.
     NOTE: Windows users should use Embree v3.2.2 or later.
+-   If available OSPRay’s [Example Viewer](#example-viewer) can be
+    compiled with support for Intel [Open Image
+    Denoise](http://www.openimagedenoise.org/) by enabling
+    `OSPRAY_APPS_ENABLE_DENOISER`. You may need to hint the location of
+    the library with the CMake variable `OpenImageDenoise_DIR`.
 
 Depending on your Linux distribution you can install these dependencies
 using `yum` or `apt-get`. Some of these packages might already be
@@ -166,8 +174,9 @@ way to configure OSPRay and to create the Visual Studio solution files:
     does not exist yet CMake will create it).
 
 -   Click “Configure” and select as generator the Visual Studio version
-    you have, for Win64 (32 bit builds are not supported by OSPRay),
-    e.g. “Visual Studio 15 2017 Win64”.
+    you have (OSPRay needs Visual Studio 14 2015 or newer), for Win64
+    (32 bit builds are not supported by OSPRay), e.g. “Visual Studio 15
+    2017 Win64”.
 
 -   If the configuration fails because some dependencies could not be
     found then follow the instructions given in the error message,
@@ -204,9 +213,9 @@ Documentation
 =============
 
 The following [API
-documentation](http://www.sdvis.org/ospray/download/OSPRay_readme.pdf "OSPRay Documentation")
+documentation](http://www.sdvis.org/ospray/download/OSPRay_readme_devel.pdf "OSPRay Documentation")
 of OSPRay can also be found as a [pdf
-document](http://www.sdvis.org/ospray/download/OSPRay_readme.pdf "OSPRay Documentation").
+document](http://www.sdvis.org/ospray/download/OSPRay_readme_devel.pdf "OSPRay Documentation").
 
 For a deeper explanation of the concepts, design, features and
 performance of OSPRay also have a look at the IEEE Vis 2016 paper
@@ -654,40 +663,40 @@ is being used. The enum type `OSPDataType` describes the different data
 types that can be represented in OSPRay; valid constants are listed in
 the table below.
 
-| Type/Name               | Description                                   |
-|:------------------------|:----------------------------------------------|
-| OSP\_DEVICE             | API device object reference                   |
-| OSP\_VOID\_PTR          | void pointer                                  |
-| OSP\_DATA               | data reference                                |
-| OSP\_OBJECT             | generic object reference                      |
-| OSP\_CAMERA             | camera object reference                       |
-| OSP\_FRAMEBUFFER        | framebuffer object reference                  |
-| OSP\_LIGHT              | light object reference                        |
-| OSP\_MATERIAL           | material object reference                     |
-| OSP\_TEXTURE            | texture object reference                      |
-| OSP\_RENDERER           | renderer object reference                     |
-| OSP\_MODEL              | model object reference                        |
-| OSP\_GEOMETRY           | geometry object reference                     |
-| OSP\_VOLUME             | volume object reference                       |
-| OSP\_TRANSFER\_FUNCTION | transfer function object reference            |
-| OSP\_PIXEL\_OP          | pixel operation object reference              |
-| OSP\_STRING             | C-style zero-terminated character string      |
-| OSP\_CHAR               | 8 bit signed character scalar                 |
-| OSP\_UCHAR              | 8 bit unsigned character scalar               |
-| OSP\_UCHAR\[234\]       | … and \[234\]-element vector                  |
-| OSP\_USHORT             | 16 bit unsigned integer scalar                |
-| OSP\_INT                | 32 bit signed integer scalar                  |
-| OSP\_INT\[234\]         | … and \[234\]-element vector                  |
-| OSP\_UINT               | 32 bit unsigned integer scalar                |
-| OSP\_UINT\[234\]        | … and \[234\]-element vector                  |
-| OSP\_LONG               | 64 bit signed integer scalar                  |
-| OSP\_LONG\[234\]        | … and \[234\]-element vector                  |
-| OSP\_ULONG              | 64 bit unsigned integer scalar                |
-| OSP\_ULONG\[234\]       | … and \[234\]-element vector                  |
-| OSP\_FLOAT              | 32 bit single precision floating point scalar |
-| OSP\_FLOAT\[234\]       | … and \[234\]-element vector                  |
-| OSP\_FLOAT3A            | … and aligned 3-element vector                |
-| OSP\_DOUBLE             | 64 bit double precision floating point scalar |
+| Type/Name               | Description                                                       |
+|:------------------------|:------------------------------------------------------------------|
+| OSP\_DEVICE             | API device object reference                                       |
+| OSP\_VOID\_PTR          | void pointer                                                      |
+| OSP\_DATA               | data reference                                                    |
+| OSP\_OBJECT             | generic object reference                                          |
+| OSP\_CAMERA             | camera object reference                                           |
+| OSP\_FRAMEBUFFER        | framebuffer object reference                                      |
+| OSP\_LIGHT              | light object reference                                            |
+| OSP\_MATERIAL           | material object reference                                         |
+| OSP\_TEXTURE            | texture object reference                                          |
+| OSP\_RENDERER           | renderer object reference                                         |
+| OSP\_MODEL              | model object reference                                            |
+| OSP\_GEOMETRY           | geometry object reference                                         |
+| OSP\_VOLUME             | volume object reference                                           |
+| OSP\_TRANSFER\_FUNCTION | transfer function object reference                                |
+| OSP\_PIXEL\_OP          | pixel operation object reference                                  |
+| OSP\_STRING             | C-style zero-terminated character string                          |
+| OSP\_CHAR               | 8 bit signed character scalar                                     |
+| OSP\_UCHAR              | 8 bit unsigned character scalar                                   |
+| OSP\_UCHAR\[234\]       | … and \[234\]-element vector                                      |
+| OSP\_USHORT             | 16 bit unsigned integer scalar                                    |
+| OSP\_INT                | 32 bit signed integer scalar                                      |
+| OSP\_INT\[234\]         | … and \[234\]-element vector                                      |
+| OSP\_UINT               | 32 bit unsigned integer scalar                                    |
+| OSP\_UINT\[234\]        | … and \[234\]-element vector                                      |
+| OSP\_LONG               | 64 bit signed integer scalar                                      |
+| OSP\_LONG\[234\]        | … and \[234\]-element vector                                      |
+| OSP\_ULONG              | 64 bit unsigned integer scalar                                    |
+| OSP\_ULONG\[234\]       | … and \[234\]-element vector                                      |
+| OSP\_FLOAT              | 32 bit single precision floating point scalar                     |
+| OSP\_FLOAT\[234\]       | … and \[234\]-element vector                                      |
+| OSP\_FLOAT3A            | … and 3-element vector with padding (same size as an OSP\_FLOAT4) |
+| OSP\_DOUBLE             | 64 bit double precision floating point scalar                     |
 
 : Valid named constants for `OSPDataType`.
 
@@ -823,7 +832,7 @@ specified.
 The first variant shares the voxel data with the application. Such a
 volume type is created by passing the type string
 “`shared_structured_volume`” to `ospNewVolume`. The voxel data is laid
-out in memory in XYZ order and provided to the volume via a
+out in memory in xyz-order[^2] and provided to the volume via a
 [data](#data) buffer parameter named “`voxelData`”.
 
 The second regular grid variant is optimized for rendering performance:
@@ -841,7 +850,7 @@ OSPError ospSetRegion(OSPVolume, void *source,
 
 The voxel data pointed to by `source` is copied into the given volume
 starting at position `regionCoords`, must be of size `regionSize` and be
-placed in memory in XYZ order. Note that OSPRay distinguishes between
+placed in memory in xyz-order. Note that OSPRay distinguishes between
 volume data and volume parameters. This function must be called only
 after all volume parameters (in particular `dimensions` and `voxelType`,
 see below) have been set and *before* `ospCommit(volume)` is called. If
@@ -1064,12 +1073,12 @@ matter, as OSPRay internally calculates vertex normals to ensure proper
 sampling and interpolation.
 
 For wedge cells, each wedge is formed by a group of six indices into the
-vertices and data value. Vertex ordering is the same as `VTK_WEDGE` -
+vertices and data value. Vertex ordering is the same as `VTK_WEDGE`:
 three bottom vertices counterclockwise, then top three counterclockwise.
 
 For hexahedral cells, each hexahedron is formed by a group of eight
 indices into the vertices and data value. Vertex ordering is the same as
-`VTK_HEXAHEDRON` – four bottom vertices counterclockwise, then top four
+`VTK_HEXAHEDRON`: four bottom vertices counterclockwise, then top four
 counterclockwise.
 
 <table style="width:98%;">
@@ -1210,6 +1219,33 @@ The `vertex` and `index` arrays are mandatory to create a valid quad
 mesh. A quad is internally handled as a pair of two triangles, thus
 mixing triangles and quad is supported by encoding a triangle as a quad
 with the last two vertex indices being identical (`w=z`).
+
+### Subdivision
+
+A mesh consisting of subdivision surfaces, created by specifying a
+geomtry of type “`subdivision`”. Once created, a subdivision recognizes
+the following parameters:
+
+| Type               | Name              | Description                                                                   |
+|:-------------------|:------------------|:------------------------------------------------------------------------------|
+| vec3f\[\]          | vertex            | [data](#data) array of vertex positions                                       |
+| vec4f\[\]          | vertex.color      | [data](#data) array of vertex colors (RGBA)                                   |
+| vec2f\[\]          | vertex.texcoord   | [data](#data) array of vertex texture coordinates                             |
+| float              | level             | global level of tesselation, default is 5                                     |
+| uint\[\]/vec4i\[\] | index             | [data](#data) array of indices (into the vertex array(s))                     |
+| float\[\]          | index.level       | [data](#data) array of per-edge levels of tesselation, overrides global level |
+| uint\[\]           | face              | [data](#data) array holding the number of indices/edges (3 to 15) per face    |
+| vec2i\[\]          | edgeCrease.index  | [data](#data) array of edge crease indices                                    |
+| float\[\]          | edgeCrease.weight | [data](#data) array of edge crease weights                                    |
+| uint\[\]           | vertexCrease.inde | x [data](#data) array of vertex crease indices                                |
+| float\[\]          | vertexCrease.weig | ht [data](#data) array of vertex crease weights                               |
+
+: Parameters defining a Subdivision geometry.
+
+The `vertex` and `index` arrays are mandatory to create a valid
+subdivision surface. If no `face` array is present then a pure quad mesh
+is assumed (and indices must be of type `vec4i`). Optionally supported
+are edge and vertex creases.
 
 ### Spheres
 
@@ -1628,30 +1664,24 @@ all renderers are
 <td style="text-align: left;"><a href="#data">data</a> array with handles of the <a href="#lights">lights</a></td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">float</td>
-<td style="text-align: left;">epsilon</td>
-<td style="text-align: right;">10<sup>-6</sup></td>
-<td style="text-align: left;">ray epsilon to avoid self-intersections, relative to scene diameter</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">int</td>
 <td style="text-align: left;">spp</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: left;">samples per pixel</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">int</td>
 <td style="text-align: left;">maxDepth</td>
 <td style="text-align: right;">20</td>
 <td style="text-align: left;">maximum ray recursion depth</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">minContribution</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">sample contributions below this value will be neglected to speed-up rendering</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">varianceThreshold</td>
 <td style="text-align: right;">0</td>
@@ -1741,9 +1771,10 @@ special parameters:
 
 : Special parameters understood by the SciVis renderer.
 
-Note that the intensity (and color) of AO is controlled via an [ambient
-light](#ambient-light). If `aoSamples` is zero (the default) then
-ambient lights cause ambient illumination (without occlusion).
+Note that the intensity (and color) of AO is deduced from an [ambient
+light](#ambient-light) in the `lights` array.[^3] If `aoSamples` is zero
+(the default) then ambient lights cause ambient illumination (without
+occlusion).
 
 Per default the background of the rendered image will be transparent
 black, i.e. the alpha channel holds the opacity of the rendered objects.
@@ -1892,7 +1923,7 @@ OSPLight ospNewLight3(const char *type);
 
 The call returns `NULL` if that type of light is not known by the
 renderer, or else an `OSPLight` handle to the created light source. All
-light sources[^2] accept the following parameters:
+light sources[^4] accept the following parameters:
 
 | Type     | Name      |  Default| Description                            |
 |:---------|:----------|--------:|:---------------------------------------|
@@ -1900,7 +1931,7 @@ light sources[^2] accept the following parameters:
 | float    | intensity |        1| intensity of the light (a factor)      |
 | bool     | isVisible |     true| whether the light can be directly seen |
 
-: Parameters accepted by the all lights.
+: Parameters accepted by all lights.
 
 The following light types are supported by most OSPRay renderers.
 
@@ -1996,8 +2027,8 @@ the spot light supports the special parameters listed in the table.
 
 : Special parameters accepted by the spot light.
 
-![Angles used by
-SpotLight.](https://ospray.github.io/images/spot_light.png)
+![Angles used by the spot
+light.](https://ospray.github.io/images/spot_light.png)
 
 Setting the radius to a value greater than zero will result in soft
 shadows when the renderer uses stochastic sampling (like the [path
@@ -2005,10 +2036,10 @@ tracer](#path-tracer)).
 
 #### Quad Light
 
-The quad[^3] light is a planar, procedural area light source emitting
+The quad[^5] light is a planar, procedural area light source emitting
 uniformly on one side into the half space. It is created by passing the
 type string “`quad`” to `ospNewLight3`. In addition to the [general
-parameters](#lights) understood by all lights the spot light supports
+parameters](#lights) understood by all lights the quad light supports
 the following special parameters:
 
 | Type     | Name     | Description                                          |
@@ -2019,8 +2050,8 @@ the following special parameters:
 
 : Special parameters accepted by the quad light.
 
-![Defining a Quad
-Light.](https://ospray.github.io/images/quad_light.png)
+![Defining a quad light which emits towards the
+reader.](https://ospray.github.io/images/quad_light.png)
 
 The emission side is determined by the cross product of `edge1`×`edge2`.
 Note that only renderers that use stochastic sampling (like the path
@@ -2147,8 +2178,10 @@ white room would hardly be discernible, as can be seen in the figure
 below).
 
 <figure>
-<img src="https://ospray.github.io/images/diffuse_rooms.png" alt="Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to in higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels." width="80.0%" /><figcaption>Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to in higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels.</figcaption>
-</figure>If present, the color component of [geometries](#geometries) is
+<img src="https://ospray.github.io/images/diffuse_rooms.png" alt="Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels." width="80.0%" /><figcaption>Comparison of diffuse rooms with 100% reflecting white paint (left) and realistic 80% reflecting white paint (right), which leads to higher overall contrast. Note that exposure has been adjusted to achieve similar brightness levels.</figcaption>
+</figure>
+
+If present, the color component of [geometries](#geometries) is
 also used for the diffuse color `Kd` and the alpha component is also
 used for the opacity `d`.
 
@@ -2158,7 +2191,7 @@ with `Tf`.
 Normal mapping can simulate small geometric features via the texture
 `map_Bump`. The normals $n$ in the normal map are wrt. the local
 tangential shading coordinate system and are encoded as $½(n+1)$, thus a
-texel $(0.5, 0.5, 1)$[^4] represents the unperturbed shading normal
+texel $(0.5, 0.5, 1)$[^6] represents the unperturbed shading normal
 $(0, 0, 1)$. Because of this encoding an sRGB gamma [texture](#texture)
 format is ignored and normals are always fetched as linear from a normal
 map. Note that the orientation of normal maps is important for a
@@ -2170,7 +2203,9 @@ or invert its green channel.
 
 <figure>
 <img src="https://ospray.github.io/images/normalmap_frustum.png" alt="Normal map representing an exalted square pyramidal frustum." width="60.0%" /><figcaption>Normal map representing an exalted square pyramidal frustum.</figcaption>
-</figure>All parameters (except `Tf`) can be textured by passing a
+</figure>
+
+All parameters (except `Tf`) can be textured by passing a
 [texture](#texture) handle, prefixed with “`map_`”. The fetched texels
 are multiplied by the respective parameter value. Texturing requires
 [geometries](#geometries) with texture coordinates, e.g. a [triangle
@@ -2178,11 +2213,13 @@ mesh](#triangle-mesh) with `vertex.texcoord` provided. The color
 textures `map_Kd` and `map_Ks` are typically in one of the sRGB gamma
 encoded formats, whereas textures `map_Ns` and `map_d` are usually in a
 linear format (and only the first component is used). Additionally, all
-textures support \[texture transformations\].
+textures support [texture transformations](#texture2d-transformations).
 
 <figure>
 <img src="https://ospray.github.io/images/material_OBJ.jpg" alt="Rendering of a OBJ material with wood textures." width="60.0%" /><figcaption>Rendering of a OBJ material with wood textures.</figcaption>
-</figure>#### Principled
+</figure>
+
+#### Principled
 
 The Principled material is the most complex material offered by the
 [path tracer](#path-tracer), which is capable of producing a wide
@@ -2385,12 +2422,14 @@ table below.
 : Parameters of the Principled material.
 
 All parameters can be textured by passing a [texture](#texture) handle,
-suffixed with “`Map`” (e.g., “`baseColorMap`”); \[texture
-transformations\] are supported as well.
+suffixed with “`Map`” (e.g., “`baseColorMap`”); [texture
+transformations](#texture2d-transformations) are supported as well.
 
 <figure>
 <img src="https://ospray.github.io/images/material_Principled.jpg" alt="Rendering of a Principled coated brushed metal material with textured anisotropic rotation and a dust layer (sheen) on top." width="60.0%" /><figcaption>Rendering of a Principled coated brushed metal material with textured anisotropic rotation and a dust layer (sheen) on top.</figcaption>
-</figure>#### CarPaint
+</figure>
+
+#### CarPaint
 
 The CarPaint material is a specialized version of the Principled
 material for rendering different types of car paints. To create a
@@ -2516,12 +2555,14 @@ CarPaint material, pass the type string “`CarPaint`” to
 : Parameters of the CarPaint material.
 
 All parameters can be textured by passing a [texture](#texture) handle,
-suffixed with “`Map`” (e.g., “`baseColorMap`”); \[texture
-transformations\] are supported as well.
+suffixed with “`Map`” (e.g., “`baseColorMap`”); [texture
+transformations](#texture2d-transformations) are supported as well.
 
 <figure>
 <img src="https://ospray.github.io/images/material_CarPaint.jpg" alt="Rendering of a pearlescent CarPaint material." width="60.0%" /><figcaption>Rendering of a pearlescent CarPaint material.</figcaption>
-</figure>#### Metal
+</figure>
+
+#### Metal
 
 The [path tracer](#path-tracer) offers a physical metal, supporting
 changing roughness and realistic color shifts at edges. To create a
@@ -2599,12 +2640,15 @@ coefficients, based on data from https://refractiveindex.info/.
 
 The `roughness` parameter controls the variation of microfacets and thus
 how polished the metal will look. The roughness can be modified by a
-[texture](#texture) `map_roughness` (\[texture transformations\] are
-supported as well) to create interesting edging effects.
+[texture](#texture) `map_roughness` ([texture
+transformations](#texture2d-transformations) are supported as well) to
+create interesting edging effects.
 
 <figure>
 <img src="https://ospray.github.io/images/material_Metal.jpg" alt="Rendering of golden Metal material with textured roughness." width="60.0%" /><figcaption>Rendering of golden Metal material with textured roughness.</figcaption>
-</figure>#### Alloy
+</figure>
+
+#### Alloy
 
 The [path tracer](#path-tracer) offers an alloy material, which behaves
 similar to [Metal](#metal), but allows for more intuitive and flexible
@@ -2626,12 +2670,14 @@ present, the color component of [geometries](#geometries) is also used
 for reflectivity at normal incidence `color`. As in [Metal](#metal) the
 `roughness` parameter controls the variation of microfacets and thus how
 polished the alloy will look. All parameters can be textured by passing
-a [texture](#texture) handle, prefixed with “`map_`”; \[texture
-transformations\] are supported as well.
+a [texture](#texture) handle, prefixed with “`map_`”; [texture
+transformations](#texture2d-transformations) are supported as well.
 
 <figure>
 <img src="https://ospray.github.io/images/material_Alloy.jpg" alt="Rendering of a fictional Alloy material with textured color." width="60.0%" /><figcaption>Rendering of a fictional Alloy material with textured color.</figcaption>
-</figure>#### Glass
+</figure>
+
+#### Glass
 
 The [path tracer](#path-tracer) offers a realistic a glass material,
 supporting refraction and volumetric attenuation (i.e. the transparency
@@ -2653,7 +2699,9 @@ trough a glass of thickness `attenuationDistance`.
 
 <figure>
 <img src="https://ospray.github.io/images/material_Glass.jpg" alt="Rendering of a Glass material with orange attenuation." width="60.0%" /><figcaption>Rendering of a Glass material with orange attenuation.</figcaption>
-</figure>#### ThinGlass
+</figure>
+
+#### ThinGlass
 
 The [path tracer](#path-tracer) offers a thin glass material useful for
 objects with just a single surface, most prominently windows. It models
@@ -2675,10 +2723,10 @@ type string “`ThinGlass`” to `ospNewMaterial2`. Its parameters are
 
 For convenience the attenuation is controlled the same way as with the
 [Glass](#glass) material. Additionally, the color due to attenuation can
-be modulated with a [texture](#texture) `map_attenuationColor`
-(\[texture transformations\] are supported as well). If present, the
-color component of [geometries](#geometries) is also used for the
-attenuation color. The `thickness` parameter sets the (virtual)
+be modulated with a [texture](#texture) `map_attenuationColor` ([texture
+transformations](#texture2d-transformations) are supported as well). If
+present, the color component of [geometries](#geometries) is also used
+for the attenuation color. The `thickness` parameter sets the (virtual)
 thickness and allows for easy exchange of parameters with the (real)
 [Glass](#glass) material; internally just the ratio between
 `attenuationDistance` and `thickness` is used to calculate the resulting
@@ -2686,9 +2734,13 @@ attenuation and thus the material appearance.
 
 <figure>
 <img src="https://ospray.github.io/images/material_ThinGlass.jpg" alt="Rendering of a ThinGlass material with red attenuation." width="60.0%" /><figcaption>Rendering of a ThinGlass material with red attenuation.</figcaption>
-</figure><figure>
+</figure>
+
+<figure>
 <img src="https://ospray.github.io/images/ColoredWindow.jpg" alt="Example image of a colored window made with textured attenuation of the ThinGlass material." width="60.0%" /><figcaption>Example image of a colored window made with textured attenuation of the ThinGlass material.</figcaption>
-</figure>#### MetallicPaint
+</figure>
+
+#### MetallicPaint
 
 The [path tracer](#path-tracer) offers a metallic paint material,
 consisting of a base coat with optional flakes and a clear coat. To
@@ -2706,20 +2758,22 @@ to `ospNewMaterial2`. Its parameters are listed in the table below.
 : Parameters of the MetallicPaint material.
 
 The color of the base coat `baseColor` can be textured by a
-[texture](#texture) `map_baseColor`, which also supports \[texture
-transformations\]. If present, the color component of
-[geometries](#geometries) is also used for the color of the base coat.
-parameter `flakeAmount` controls the proportion of flakes in the base
-coat, so when setting it to 1 the `baseColor` will not be visible. The
-shininess of the metallic component is governed by `flakeSpread`, which
-controls the variation of the orientation of the flakes, similar to the
-`roughness` parameter of [Metal](#metal). Note that the effect of the
-metallic flakes is currently only computed on average, thus individual
-flakes are not visible.
+[texture](#texture) `map_baseColor`, which also supports [texture
+transformations](#texture2d-transformations). If present, the color
+component of [geometries](#geometries) is also used for the color of the
+base coat. parameter `flakeAmount` controls the proportion of flakes in
+the base coat, so when setting it to 1 the `baseColor` will not be
+visible. The shininess of the metallic component is governed by
+`flakeSpread`, which controls the variation of the orientation of the
+flakes, similar to the `roughness` parameter of [Metal](#metal). Note
+that the effect of the metallic flakes is currently only computed on
+average, thus individual flakes are not visible.
 
 <figure>
 <img src="https://ospray.github.io/images/material_MetallicPaint.jpg" alt="Rendering of a MetallicPaint material." width="60.0%" /><figcaption>Rendering of a MetallicPaint material.</figcaption>
-</figure>#### Luminous
+</figure>
+
+#### Luminous
 
 The [path tracer](#path-tracer) supports the Luminous material which
 emits light uniformly in all directions and which can thus be used to
@@ -2730,7 +2784,9 @@ parameters of lights: [`color` and `intensity`](#lights).
 
 <figure>
 <img src="https://ospray.github.io/images/material_Luminous.jpg" alt="Rendering of a yellow Luminous material." width="60.0%" /><figcaption>Rendering of a yellow Luminous material.</figcaption>
-</figure>### Texture
+</figure>
+
+### Texture
 
 OSPRay currently implements two texture types (`texture2d` and `volume`)
 and is open for extension to other types by applications. More types may
@@ -2752,7 +2808,7 @@ its parameters are as follows
 
 | Type    | Name  | Description                        |
 |:--------|:------|:-----------------------------------|
-| vec2f   | size  | size of the textures               |
+| vec2i   | size  | size of the textures               |
 | int     | type  | `OSPTextureFormat` for the texture |
 | int     | flags | special attribute flags for this   |
 |         |       | texture, currently only responds   |
@@ -2888,7 +2944,7 @@ supports the special parameters listed in the table below.
 <tr class="even">
 <td style="text-align: left;">float</td>
 <td style="text-align: left;">aspect</td>
-<td style="text-align: left;">ratio of width by height of the frame</td>
+<td style="text-align: left;">ratio of width by height of the frame (and image region)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">float</td>
@@ -2920,8 +2976,8 @@ supports the special parameters listed in the table below.
 
 : Parameters accepted by the perspective camera.
 
-Note that when setting the `aspect` ratio a non-default image region
-(using `imageStart` & `imageEnd`) needs to be regarded.
+Note that when computing the `aspect` ratio a potentially set image
+region (using `imageStart` & `imageEnd`) needs to be regarded as well.
 
 In architectural photography it is often desired for aesthetic reasons
 to display the vertical edges of buildings or walls vertically in the
@@ -2937,11 +2993,17 @@ images below.
 
 <figure>
 <img src="https://ospray.github.io/images/camera_perspective.jpg" alt="Example image created with the perspective camera, featuring depth of field." width="60.0%" /><figcaption>Example image created with the perspective camera, featuring depth of field.</figcaption>
-</figure><figure>
+</figure>
+
+<figure>
 <img src="https://ospray.github.io/images/camera_architectual.jpg" alt="Enabling the architectural flag corrects the perspective projection distortion, resulting in parallel vertical edges." width="60.0%" /><figcaption>Enabling the <code>architectural</code> flag corrects the perspective projection distortion, resulting in parallel vertical edges.</figcaption>
-</figure><figure>
+</figure>
+
+<figure>
 <img src="https://ospray.github.io/images/camera_stereo.jpg" alt="Example 3D stereo image using stereoMode side-by-side." width="90.0%" /><figcaption>Example 3D stereo image using <code>stereoMode</code> side-by-side.</figcaption>
-</figure>#### Orthographic Camera
+</figure>
+
+#### Orthographic Camera
 
 The orthographic camera implements a simple camera with orthographic
 projection, without support for depth of field or motion blur. It is
@@ -2965,7 +3027,9 @@ and `imageEnd`, and both methods can be combined. In any case, the
 
 <figure>
 <img src="https://ospray.github.io/images/camera_orthographic.jpg" alt="Example image created with the orthographic camera." width="60.0%" /><figcaption>Example image created with the orthographic camera.</figcaption>
-</figure>#### Panoramic Camera
+</figure>
+
+#### Panoramic Camera
 
 The panoramic camera implements a simple camera without support for
 motion blur. It captures the complete surrounding with a latitude /
@@ -2976,7 +3040,9 @@ by using the [general parameters](#cameras) understood by all cameras.
 
 <figure>
 <img src="https://ospray.github.io/images/camera_panoramic.jpg" alt="Latitude / longitude map created with the panoramic camera." width="90.0%" /><figcaption>Latitude / longitude map created with the panoramic camera.</figcaption>
-</figure>### Picking
+</figure>
+
+### Picking
 
 To get the world-space position of the geometry (if any) seen at \[0–1\]
 normalized screen-space pixel coordinates `screenPos` use
@@ -3034,10 +3100,10 @@ values of `OSPFrameBufferChannel` listed in the table below.
 | Name              | Description                                                                                              |
 |:------------------|:---------------------------------------------------------------------------------------------------------|
 | OSP\_FB\_COLOR    | RGB color including alpha                                                                                |
-| OSP\_FB\_DEPTH    | euclidean distance to the camera (\_not\_ to the image plane), as linear 32 bit float                    |
+| OSP\_FB\_DEPTH    | euclidean distance to the camera (*not* to the image plane), as linear 32 bit float                      |
 | OSP\_FB\_ACCUM    | accumulation buffer for progressive refinement                                                           |
 | OSP\_FB\_VARIANCE | for estimation of the current noise level if OSP\_FB\_ACCUM is also present, see [rendering](#rendering) |
-| OSP\_FB\_NORMAL   | accumulated screen-space normal of the first hit, as vec3f                                               |
+| OSP\_FB\_NORMAL   | accumulated world-space normal of the first hit, as vec3f                                                |
 | OSP\_FB\_ALBEDO   | accumulated material albedo (color without illumination) at the first hit, as vec3f                      |
 
 : Framebuffer channels constants (of type `OSPFrameBufferChannel`),
@@ -3208,7 +3274,7 @@ float ospRenderFrame(OSPFrameBuffer, OSPRenderer,
 ```
 
 The third parameter specifies what channel(s) of the framebuffer is
-written to[^5]. What to render and how to render it depends on the
+written to[^7]. What to render and how to render it depends on the
 renderer’s parameters. If the framebuffer supports accumulation (i.e. it
 was created with `OSP_FB_ACCUM`) then successive calls to
 `ospRenderFrame` will progressively refine the rendered image. If
@@ -3234,7 +3300,7 @@ void ospSetProgressFunc(OSPProgressFunc, void* userPtr);
 ```
 
 The provided user pointer `userPtr` is passed as first argument to the
-callback function[^6] and the reported progress is in (0–1\]. If the
+callback function[^8] and the reported progress is in (0–1\]. If the
 callback function returns zero than the application requests to cancel
 rendering, i.e. the current `ospRenderFrame` will return at the first
 opportunity and the content of the frambuffer will be undefined.
@@ -3255,8 +3321,8 @@ Prerequisites for MPI Mode
 --------------------------
 
 In addition to the standard build requirements of OSPRay, you must have
-the following items available in your environment in order to build&run
-OSPRay in MPI mode:
+the following items available in your environment in order to build &
+run OSPRay in MPI mode:
 
 -   An MPI enabled multi-node environment, such as an HPC cluster
 -   An MPI implementation you can build against (i.e. Intel MPI,
@@ -3315,7 +3381,7 @@ have a lot of variance in how expensive each tile is to render.
 |:-----|:--------------------|--------:|:--------------------------------------|
 | bool | dynamicLoadBalancer |    false| whether to use dynamic load balancing |
 
-: Parameters specific to the `mpi_offload` device
+: Parameters specific to the `mpi_offload` device.
 
 ### Distributed Rendering
 
@@ -3362,7 +3428,7 @@ ospVolumeViewer data-replicated, using `c1`-`c4` as compute nodes and
 
     mpirun -perhost 1 -hosts localhost,c1,c2,c3,c4 ./ospExampleViewer <scene file> --osp:mpi
 
-### Separate Application&Worker Launches
+### Separate Application & Worker Launches
 
 The second option is to explicitly launch the app on rank 0 and worker
 ranks on the other nodes. This is done by running `ospray_mpi_worker` on
@@ -3408,7 +3474,7 @@ device.
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;"><code>void*</code></td>
+<td style="text-align: left;">void*</td>
 <td style="text-align: left;">worldCommunicator</td>
 <td style="text-align: left;">A pointer to the <code>MPI_Comm</code> which should be used as OSPRay’s world communicator. This will set how many ranks OSPRay should expect to participate in rendering. The default is <code>MPI_COMM_WORLD</code> where all ranks are expected to participate in rendering.</td>
 </tr>
@@ -3431,16 +3497,16 @@ can create a communicator with one rank per-node to then run OSPRay on
 one process per-node. The remaining ranks on each node can then
 aggregate their data to the OSPRay process for rendering.
 
-There are also two optional parameters available on the OSPModel created
-using the distributed device, which can be set to tell OSPRay about your
-application’s data distribution.
+The model used by the distributed device takes three additional
+parameters, to allow users to express their data distribution to OSPRay.
+All models should be disjoint to ensure correct sort-last compositing.
 
-<table style="width:97%;">
-<caption>Parameters for the distributed OSPModel</caption>
+<table style="width:98%;">
+<caption>Parameters for the distributed <code>OSPModel</code>.</caption>
 <colgroup>
-<col style="width: 14%" />
-<col style="width: 23%" />
-<col style="width: 60%" />
+<col style="width: 8%" />
+<col style="width: 17%" />
+<col style="width: 71%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -3451,31 +3517,34 @@ application’s data distribution.
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;"><code>box3f[]</code></td>
-<td style="text-align: left;">regions</td>
-<td style="text-align: left;"><a href="#data">data</a> array of boxes which bound the data owned by the current rank, used for sort-last compositing. The global set of regions specified by all ranks must be disjoint for correct compositing.</td>
+<td style="text-align: left;">int</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">An integer that uniquely identifies this piece of distributed data. For example, in a common case of one sub-brick per-rank, this would just be the region’s MPI rank. Multiple ranks can specify models with the same ID, in which case the rendering work for the model will be shared among them.</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;"><code>box3f[]</code></td>
-<td style="text-align: left;">ghostRegions</td>
-<td style="text-align: left;">Optional <a href="#data">data</a> array of boxes which bound the ghost data on each rank. Using these shared data between nodes can be used for computing secondary ray effects such as ambient occlusion. If specifying ghostRegions, there should be one ghostRegion for each region.</td>
+<td style="text-align: left;">vec3f</td>
+<td style="text-align: left;">region.lower</td>
+<td style="text-align: left;">Override the original model geometry + volume bounds with a custom lower bound position. This can be used to clip geometry in the case the objects cross over to another region owned by a different node. For example, rendering a set of spheres with radius.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">vec3f</td>
+<td style="text-align: left;">region.upper</td>
+<td style="text-align: left;">Override the original model geometry + volume bounds with a custom upper bound position.</td>
 </tr>
 </tbody>
 </table>
 
-: Parameters for the distributed OSPModel
-
-See the distributed device examples in the MPI module for examples.
+: Parameters for the distributed `OSPModel`.
 
 The renderer supported when using the distributed device is the
 `mpi_raycast` renderer. This renderer is an experimental renderer and
-currently only supports ambient occlusion (on the local data only). To
-compute correct ambient occlusion across the distributed data the
-application is responsible for replicating ghost data and specifying the
-ghostRegions and regions as described above.
+currently only supports ambient occlusion (on the local data only, with
+optional ghost data). To compute correct ambient occlusion across the
+distributed data the application is responsible for replicating ghost
+data and specifying the ghost models and models as described above.
 
-<table style="width:97%;">
-<caption>Parameters for the distributed OSPModel</caption>
+<table style="width:98%;">
+<caption>Parameters for the <code>mpi_raycast</code> renderer.</caption>
 <colgroup>
 <col style="width: 14%" />
 <col style="width: 23%" />
@@ -3492,6 +3561,18 @@ ghostRegions and regions as described above.
 </thead>
 <tbody>
 <tr class="odd">
+<td style="text-align: left;">OSPModel/OSPModel[]</td>
+<td style="text-align: left;">model</td>
+<td style="text-align: right;">NULL</td>
+<td style="text-align: left;">the <a href="#model">model</a> to render, can optionally be a <a href="#data">data</a> array of multiple models</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OSPModel/OSPModel[]</td>
+<td style="text-align: left;">ghostModel</td>
+<td style="text-align: right;">NULL</td>
+<td style="text-align: left;">the optional <a href="#model">model</a> containing the ghost geometry for ambient occlusion; when setting a <a href="#data">data</a> array for both <code>model</code> and <code>ghostModel</code>, each individual ghost model shadows only its corresponding model</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">int</td>
 <td style="text-align: left;">aoSamples</td>
 <td style="text-align: right;">0</td>
@@ -3500,7 +3581,9 @@ ghostRegions and regions as described above.
 </tbody>
 </table>
 
-: Parameters for the distributed OSPModel
+: Parameters for the `mpi_raycast` renderer.
+
+See the distributed device examples in the MPI module for examples.
 
 Scenegraph
 ==========
@@ -3664,7 +3747,7 @@ Tutorial
 --------
 
 A minimal working example demonstrating how to use OSPRay can be found
-at `apps/ospTutorial.c`[^7]. On Linux build it in the build directory
+at `apps/ospTutorial.c`[^9]. On Linux build it in the build directory
 with
 
     gcc -std=c99 ../apps/ospTutorial.c -I ../ospray/include -I .. \
@@ -3842,19 +3925,25 @@ page.
 [^1]: For example, if OSPRay is in `~/Projects/ospray`, ISPC will also
     be searched in `~/Projects/ispc-v1.9.2-linux`
 
-[^2]: The [HDRI Light](#hdri-light) is an exception, it knows about
+[^2]: For consecutive memory addresses the x-index of the corresponding
+    voxel changes the quickest.
+
+[^3]: If there are multiple ambient lights then their contribution is
+    added
+
+[^4]: The [HDRI light](#hdri-light) is an exception, it knows about
     `intensity`, but not about `color`.
 
-[^3]: actually a parallelogram
+[^5]: actually a parallelogram
 
-[^4]: respectively $(127, 127, 255)$ for 8 bit textures
+[^6]: respectively $(127, 127, 255)$ for 8 bit textures
 
-[^5]: This is currently not implemented, i.e. all channels of the
+[^7]: This is currently not implemented, i.e. all channels of the
     framebuffer are always updated.
 
-[^6]: That way applications can also register a member function of a C++
+[^8]: That way applications can also register a member function of a C++
     class together with the `this` pointer as `userPtr`.
 
-[^7]: A C++ version that uses the C++ convenience wrappers of OSPRay’s
+[^9]: A C++ version that uses the C++ convenience wrappers of OSPRay’s
     C99 API via `include/ospray/ospray_cpp.h` is available at
     `apps/ospTutorial.cpp`.

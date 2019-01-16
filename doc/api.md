@@ -377,7 +377,7 @@ the table below.
   OSP_ULONG[234]         ... and [234]-element vector
   OSP_FLOAT              32\ bit single precision floating point scalar
   OSP_FLOAT[234]         ... and [234]-element vector
-  OSP_FLOAT3A            ... and aligned 3-element vector
+  OSP_FLOAT3A            ... and 3-element vector with padding (same size as an OSP_FLOAT4)
   OSP_DOUBLE             64\ bit double precision floating point scalar
   ---------------------- -----------------------------------------------
   : Valid named constants for `OSPDataType`.
@@ -456,8 +456,9 @@ specified.
 The first variant shares the voxel data with the application. Such a
 volume type is created by passing the type string
 "`shared_structured_volume`" to `ospNewVolume`. The voxel data is laid
-out in memory in XYZ order and provided to the volume via a [data]
-buffer parameter named "`voxelData`".
+out in memory in xyz-order^[For consecutive memory addresses the x-index
+of the corresponding voxel changes the quickest.] and provided to the
+volume via a [data] buffer parameter named "`voxelData`".
 
 The second regular grid variant is optimized for rendering performance:
 data locality in memory is increased by arranging the voxel data in
@@ -472,7 +473,7 @@ anymore, but has to be transferred to OSPRay via
 
 The voxel data pointed to by `source` is copied into the given volume
 starting at position `regionCoords`, must be of size `regionSize` and be
-placed in memory in XYZ order. Note that OSPRay distinguishes between
+placed in memory in xyz-order. Note that OSPRay distinguishes between
 volume data and volume parameters. This function must be called only
 after all volume parameters (in particular `dimensions` and `voxelType`,
 see below) have been set and _before_ `ospCommit(volume)` is called.
@@ -589,14 +590,13 @@ the index order for each tetrahedron does not matter, as OSPRay
 internally calculates vertex normals to ensure proper sampling and
 interpolation.
 
-For wedge cells, each wedge is formed by a group of six indices into
-the vertices and data value.  Vertex ordering is the same as
-`VTK_WEDGE` - three bottom vertices counterclockwise, then top three
-counterclockwise.
+For wedge cells, each wedge is formed by a group of six indices into the
+vertices and data value. Vertex ordering is the same as `VTK_WEDGE`:
+three bottom vertices counterclockwise, then top three counterclockwise.
 
 For hexahedral cells, each hexahedron is formed by a group of eight
 indices into the vertices and data value. Vertex ordering is the same as
-`VTK_HEXAHEDRON` -- four bottom vertices counterclockwise, then top four
+`VTK_HEXAHEDRON`: four bottom vertices counterclockwise, then top four
 counterclockwise.
 
   -------- ------------------  -------  ---------------------------------------
@@ -699,6 +699,32 @@ mesh. A quad is internally handled as a pair of two triangles, thus
 mixing triangles and quad is supported by encoding a triangle as a quad
 with the last two vertex indices being identical (`w=z`).
 
+### Subdivision
+
+A mesh consisting of subdivision surfaces, created by specifying a
+geomtry of type "`subdivision`". Once created, a subdivision recognizes
+the following parameters:
+
+  Type               Name             Description
+  ------------------ ---------------- -------------------------------------------------
+  vec3f[]            vertex                [data] array of vertex positions
+  vec4f[]            vertex.color          [data] array of vertex colors (RGBA)
+  vec2f[]            vertex.texcoord       [data] array of vertex texture coordinates
+  float              level                 global level of tesselation, default is 5
+  uint[]/vec4i[]     index                 [data] array of indices (into the vertex array(s))
+  float[]            index.level           [data] array of per-edge levels of tesselation, overrides global level
+  uint[]             face                  [data] array holding the number of indices/edges (3 to 15) per face
+  vec2i[]            edgeCrease.index      [data] array of edge crease indices
+  float[]            edgeCrease.weight     [data] array of edge crease weights
+  uint[]             vertexCrease.index    [data] array of vertex crease indices
+  float[]            vertexCrease.weight   [data] array of vertex crease weights
+  ------------------ ---------------- -------------------------------------------------
+  : Parameters defining a Subdivision geometry.
+
+The `vertex` and `index` arrays are mandatory to create a valid
+subdivision surface. If no `face` array is present then a pure quad
+mesh is assumed (and indices must be of type `vec4i`).
+Optionally supported are edge and vertex creases.
 
 ### Spheres
 
@@ -957,9 +983,6 @@ all renderers are
 
   OSPLight[]  lights                       [data] array with handles of the [lights]
 
-  float       epsilon              10^-6^  ray epsilon to avoid self-intersections,
-                                           relative to scene diameter
-
   int         spp                       1  samples per pixel
 
   int         maxDepth                 20  maximum ray recursion depth
@@ -1017,9 +1040,10 @@ special parameters:
   ------------- ---------------------- ------------  ----------------------------
   : Special parameters understood by the SciVis renderer.
 
-Note that the intensity (and color) of AO is controlled via an [ambient
-light]. If `aoSamples` is zero (the default) then ambient lights cause
-ambient illumination (without occlusion).
+Note that the intensity (and color) of AO is deduced from an [ambient
+light] in the `lights` array.^[If there are multiple ambient lights then
+their contribution is added] If `aoSamples` is zero (the default) then
+ambient lights cause ambient illumination (without occlusion).
 
 Per default the background of the rendered image will be transparent
 black, i.e. the alpha channel holds the opacity of the rendered objects.
@@ -1122,11 +1146,11 @@ All light sources[^1] accept the following parameters:
   float     intensity         1  intensity of the light (a factor)
   bool      isVisible      true  whether the light can be directly seen
   --------- ---------- --------  ---------------------------------------
-  : Parameters accepted by the all lights.
+  : Parameters accepted by all lights.
 
 The following light types are supported by most OSPRay renderers.
 
-[^1]: The [HDRI Light] is an exception, it knows about `intensity`, but
+[^1]: The [HDRI light] is an exception, it knows about `intensity`, but
 not about `color`.
 
 #### Directional Light / Distant Light
@@ -1195,7 +1219,7 @@ the spot light supports the special parameters listed in the table.
   -------- ------------- ----------------------------------------------
   : Special parameters accepted by the spot light.
 
-![Angles used by SpotLight.][imgSpotLight]
+![Angles used by the spot light.][imgSpotLight]
 
 Setting the radius to a value greater than zero will result in soft
 shadows when the renderer uses stochastic sampling (like the [path
@@ -1206,7 +1230,7 @@ tracer]).
 The quad^[actually a parallelogram] light is a planar, procedural area light source emitting
 uniformly on one side into the half space. It is created by passing the
 type string "`quad`" to `ospNewLight3`. In addition to the [general
-parameters](#lights) understood by all lights the spot light supports
+parameters](#lights) understood by all lights the quad light supports
 the following special parameters:
 
   Type      Name      Description
@@ -1217,7 +1241,7 @@ the following special parameters:
   --------- --------- -----------------------------------------------------
   : Special parameters accepted by the quad light.
 
-![Defining a Quad Light.][imgQuadLight]
+![Defining a quad light which emits towards the reader.][imgQuadLight]
 
 The emission side is determined by the cross product of `edge1`×`edge2`.
 Note that only renderers that use stochastic sampling (like the path
@@ -1313,7 +1337,7 @@ white room would hardly be discernible, as can be seen in the figure
 below).
 
 ![Comparison of diffuse rooms with 100% reflecting white paint (left)
-and realistic 80% reflecting white paint (right), which leads to in
+and realistic 80% reflecting white paint (right), which leads to
 higher overall contrast. Note that exposure has been adjusted to achieve
 similar brightness levels.][imgDiffuseRooms]
 
@@ -1695,7 +1719,7 @@ parameters are as follows
 
   Type    Name         Description
   ------- ------------ ----------------------------------
-  vec2f   size         size of the textures
+  vec2i   size         size of the textures
   int     type         `OSPTextureFormat` for the texture
   int     flags        special attribute flags for this
                        texture, currently only responds
@@ -1812,6 +1836,7 @@ supports the special parameters listed in the table below.
                                the frame's height
 
   float aspect                 ratio of width by height of the frame
+                               (and image region)
 
   float apertureRadius         size of the aperture, controls the depth
                                of field
@@ -1832,8 +1857,8 @@ supports the special parameters listed in the table below.
   ----- ---------------------- -----------------------------------------
   : Parameters accepted by the perspective camera.
 
-Note that when setting the `aspect` ratio a non-default image region
-(using `imageStart` & `imageEnd`) needs to be regarded.
+Note that when computing the `aspect` ratio a potentially set image region
+(using `imageStart` & `imageEnd`) needs to be regarded as well.
 
 In architectural photography it is often desired for aesthetic reasons
 to display the vertical edges of buildings or walls vertically in the
@@ -1947,7 +1972,7 @@ values of `OSPFrameBufferChannel` listed in the table below.
   OSP_FB_DEPTH     euclidean distance to the camera (_not_ to the image plane), as linear 32\ bit float
   OSP_FB_ACCUM     accumulation buffer for progressive refinement
   OSP_FB_VARIANCE  for estimation of the current noise level if OSP_FB_ACCUM is also present, see [rendering]
-  OSP_FB_NORMAL    accumulated screen-space normal of the first hit, as vec3f
+  OSP_FB_NORMAL    accumulated world-space normal of the first hit, as vec3f
   OSP_FB_ALBEDO    accumulated material albedo (color without illumination) at the first hit, as vec3f
   ---------------- -----------------------------------------------------------
   : Framebuffer channels constants (of type `OSPFrameBufferChannel`),

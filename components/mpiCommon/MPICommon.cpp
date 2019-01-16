@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -149,9 +149,7 @@ namespace mpicommon {
     mpiIsThreaded = provided == MPI_THREAD_MULTIPLE;
 
     if (useCommWorld) {
-      MPI_CALL(Comm_dup(MPI_COMM_WORLD, &world.comm));
-      MPI_CALL(Comm_rank(world.comm, &world.rank));
-      MPI_CALL(Comm_size(world.comm, &world.size));
+      world.setTo(MPI_COMM_WORLD);
     }
     return !initialized;
   }

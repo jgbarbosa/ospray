@@ -1,5 +1,5 @@
 ## ======================================================================== ##
-## Copyright 2009-2018 Intel Corporation                                    ##
+## Copyright 2009-2019 Intel Corporation                                    ##
 ##                                                                          ##
 ## Licensed under the Apache License, Version 2.0 (the "License");          ##
 ## you may not use this file except in compliance with the License.         ##
@@ -38,7 +38,7 @@
 # b) contain a (extern C linkage) initializatoin routine named
 #    void ospray_init_module_<moduleName>()
 #
-OSPRAY_CREATE_LIBRARY(ospray_module_bilinear_patches
+ospray_create_library(ospray_module_bilinear_patches
   # the cpp file that contains all the plugin code - parsing
   # parameters in ospCommit(), creating and registering the object,
   # building accel strcutures, etc
