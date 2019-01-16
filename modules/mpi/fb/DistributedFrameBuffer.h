@@ -74,7 +74,7 @@ namespace ospray {
     void setTile(ospray::Tile &tile) override;
 
     void startNewFrame(const float errorThreshold);
-    void closeCurrentFrame();
+    virtual void closeCurrentFrame();
 
     void waitUntilFinished();
 
@@ -110,7 +110,7 @@ namespace ospray {
 
     void reportTimings(std::ostream &os);
 
-  private:
+  protected:
 
     using RealMilliseconds = std::chrono::duration<double, std::milli>;
     std::vector<RealMilliseconds> queueTimes;
@@ -171,7 +171,7 @@ namespace ospray {
     bool isFrameComplete(size_t numTiles);
 
     /*! Offloads processing of incoming message to tasking system */
-    void scheduleProcessing(const std::shared_ptr<mpicommon::Message> &message);
+    virtual void scheduleProcessing(const std::shared_ptr<mpicommon::Message> &message);
 
     /*! Gather the final tiles from the other ranks to the master rank to
      * copy into the framebuffer */
