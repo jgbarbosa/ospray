@@ -1,6 +1,25 @@
 Version History
 ---------------
 
+### Changes in v1.7.3:
+
+-   Make sure a "`default`" device can always be created
+-   Fix `ospNewTexture2D` (completely implementing old behaviour)
+-   Cleanup any shared object handles from the OS created from `ospLoadModule()`
+
+### Changes in v1.7.2:
+
+-   Fix issue in `mpi_offload` device where `ospRelease` would sometimes not
+    correctly free objects
+-   Fix issue in `ospray_sg` where structured volumes would not properly
+    release the underlying OSPRay object handles
+
+### Changes in v1.7.1:
+
+-   Fixed issue where the `Principled` material would sometimes show up
+    incorrectly as black
+-   Fixed issue where some headers were missing from install packages
+
 ### Changes in v1.7.0:
 
 -   Generalized texture interface to support more than classic 2D image
