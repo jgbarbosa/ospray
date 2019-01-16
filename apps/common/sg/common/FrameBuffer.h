@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -29,7 +29,7 @@ namespace ospray {
 
       // no destructor since we release the framebuffer object in Node::~Node()
 
-      const void *map();
+      const void *map(OSPFrameBufferChannel = OSP_FB_COLOR);
       void unmap(const void *mem);
 
       void clear();
@@ -37,7 +37,12 @@ namespace ospray {
 
       vec2i size() const;
       OSPFrameBufferFormat format() const;
+      bool toneMapped() const;
+#ifdef OSPRAY_APPS_ENABLE_DENOISER
+      bool auxBuffers() const;
+#endif
 
+      virtual void postTraverse(RenderContext &, const std::string&) override;
       virtual void postCommit(RenderContext &ctx) override;
 
       /*! \brief returns a std::string with the c++ name of this class */
@@ -46,11 +51,8 @@ namespace ospray {
       OSPFrameBuffer handle() const;
 
      private:
-      // create the ospray framebuffer for this class
-      void createFB();
-
-      // destroy the ospray framebuffer created via createFB()
-      void destroyFB();
+      // create/update the ospray framebuffer for this class
+      void updateFB();
 
       OSPFrameBuffer ospFrameBuffer {nullptr};
       vec2i committed_size {0};
@@ -61,8 +63,11 @@ namespace ospray {
         {"float", OSP_FB_RGBA32F},
         {"none",  OSP_FB_NONE}
       };
-      OSPPixelOp toneMapper {nullptr};
       std::string displayWallStream;
+      bool toneMapperActive {false};
+#ifdef OSPRAY_APPS_ENABLE_DENOISER
+      bool useDenoiser {false};
+#endif
     };
 
   } // ::ospray::sg

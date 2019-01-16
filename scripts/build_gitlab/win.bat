@@ -1,6 +1,6 @@
 @echo off
 rem ======================================================================== rem
-rem Copyright 2015-2018 Intel Corporation                                    rem
+rem Copyright 2015-2019 Intel Corporation                                    rem
 rem                                                                          rem
 rem Licensed under the Apache License, Version 2.0 (the "License");          rem
 rem you may not use this file except in compliance with the License.         rem
@@ -24,6 +24,7 @@ cmake -L ^
 -T "%~2" ^
 -D OSPRAY_BUILD_ISA=ALL ^
 -D OSPRAY_ENABLE_TESTING=ON ^
+-D OSPRAY_AUTO_DOWNLOAD_TEST_IMAGES=OFF ^
 -D OSPRAY_MODULE_BILINEAR_PATCH=ON ^
 -D OSPRAY_MODULE_MPI="%~3" ^
 -D OSPRAY_SG_CHOMBO=OFF ^

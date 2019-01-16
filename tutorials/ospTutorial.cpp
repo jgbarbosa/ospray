@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -126,7 +126,7 @@ int main(int argc, const char **argv) {
   ospray::cpp::Renderer renderer("scivis"); // choose Scientific Visualization renderer
 
   // create and setup light for Ambient Occlusion
-  ospray::cpp::Light light("scivis", "ambient");
+  ospray::cpp::Light light("ambient");
   light.commit();
   auto lightHandle = light.handle();
   ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);

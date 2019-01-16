@@ -1,5 +1,5 @@
 ## ======================================================================== ##
-## Copyright 2009-2018 Intel Corporation                                    ##
+## Copyright 2009-2019 Intel Corporation                                    ##
 ##                                                                          ##
 ## Licensed under the Apache License, Version 2.0 (the "License");          ##
 ## you may not use this file except in compliance with the License.         ##
@@ -14,22 +14,29 @@
 ## limitations under the License.                                           ##
 ## ======================================================================== ##
 
-OPTION(OSPRAY_MODULE_MPI "MPI parallel device" OFF)
+option(OSPRAY_MODULE_MPI "MPI parallel device" OFF)
 
-IF (OSPRAY_MODULE_MPI)
+if (OSPRAY_MODULE_MPI)
+  option(OSPRAY_MODULE_MPI_APPS "MPI module viewer application"
+    ${OSPRAY_APPS_EXAMPLEVIEWER})
 
-  SET(OSPRAY_DEFAULT_COMPONENT mpi)
+  set(OSP_MPI_COMPRESSION_THRESHOLD 16 CACHE STRING
+    "Min. number of ranks to enable message compression at (number)" )
+  mark_as_advanced(OSP_MPI_COMPRESSION_THRESHOLD)
 
-  OSPRAY_CONFIGURE_MPI()
+  set(OSPRAY_DEFAULT_COMPONENT mpi)
 
-  OSPRAY_BUILD_COMPONENT(mpiCommon)
-  OSPRAY_BUILD_COMPONENT(mpiMessageLayer)
+  ospray_configure_mpi()
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-  INCLUDE_DIRECTORIES_ISPC(${CMAKE_CURRENT_BINARY_DIR})
+  ospray_build_component(mpiCommon)
+  ospray_build_component(mpiMessageLayer)
+  ospray_build_component(snappy EXCLUDE_FROM_ALL)
 
-  OSPRAY_CREATE_LIBRARY(ospray_module_mpi
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+  include_directories(${CMAKE_CURRENT_BINARY_DIR})
+  include_directories_ispc(${CMAKE_CURRENT_BINARY_DIR})
+
+  ospray_create_library(ospray_module_mpi
     MPIDistributedDevice.cpp
     MPIOffloadDevice.cpp
     MPIOffloadWorker.cpp
@@ -42,6 +49,9 @@ IF (OSPRAY_MODULE_MPI)
     fb/DistributedFrameBuffer.cpp
     fb/DistributedFrameBuffer.ispc
     fb/DistributedFrameBuffer_TileTypes.cpp
+    fb/DistributedFrameBuffer_TileMessages.cpp
+
+    fb/DebugPixelOp.cpp
 
     render/MPILoadBalancer.cpp
     render/distributed/DistributedRaycast.cpp
@@ -52,13 +62,16 @@ IF (OSPRAY_MODULE_MPI)
     ospray_module_ispc
     ospray_mpi_common
     ospray_mpi_maml
+    snappy
   )
+  target_compile_definitions(ospray_module_mpi PUBLIC
+    -DOSP_MPI_COMPRESSION_THRESHOLD=${OSP_MPI_COMPRESSION_THRESHOLD})
 
   ##############################################################
   # MPI DEVICE - mpi worker
   ##############################################################
 
-  OSPRAY_CREATE_APPLICATION(ospray_mpi_worker
+  ospray_create_application(ospray_mpi_worker
     mpi_offload_worker_main.cpp
   LINK
     ospray_module_ispc
@@ -67,7 +80,16 @@ IF (OSPRAY_MODULE_MPI)
   ##############################################################
   # Test apps
   ##############################################################
+  if (OSPRAY_MODULE_MPI_APPS)
+    # Note: the MPI example viewer depends on tfn lib, so we must make sure that
+    # was built.
+    if (NOT TARGET ospray_tfn OR NOT TARGET ospray_imgui_util_sg
+        OR NOT TARGET ospray_imgui3d_sg)
+      message(FATAL_ERROR "ospray_tfn library is required for the MPI example app,"
+        " please set -DOSPRAY_APPS_EXAMPLEVIEWER=ON as well")
+    endif ()
 
-  ADD_SUBDIRECTORY(apps)
+    add_subdirectory(apps)
+  endif (OSPRAY_MODULE_MPI_APPS)
 
-ENDIF (OSPRAY_MODULE_MPI)
+endif (OSPRAY_MODULE_MPI)

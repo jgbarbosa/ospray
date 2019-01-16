@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -127,7 +127,7 @@ int main(int argc, const char **argv) {
   OSPRenderer renderer = ospNewRenderer("scivis"); // choose Scientific Visualization renderer
 
   // create and setup light for Ambient Occlusion
-  OSPLight light = ospNewLight2("scivis", "ambient");
+  OSPLight light = ospNewLight3("ambient");
   ospCommit(light);
   OSPData lights = ospNewData(1, OSP_LIGHT, &light, 0);
   ospCommit(lights);

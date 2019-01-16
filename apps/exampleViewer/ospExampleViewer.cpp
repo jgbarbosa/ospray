@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -47,6 +47,14 @@ namespace ospray {
         window.setInitialSearchBoxText(initialTextForNodeSearch);
 
       window.setColorMap(defaultTransferFunction);
+
+      // emulate former negative spp behavior
+      auto &renderer = root->child("renderer");
+      int spp = renderer["spp"].valueAs<int>();
+      if (spp < 1) {
+        window.navRenderResolutionScale = ::powf(2, spp);
+        renderer["spp"] = 1;
+      }
 
       imgui3D::run();
     }

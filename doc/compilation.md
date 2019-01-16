@@ -35,9 +35,14 @@ before you can build OSPRay you need the following prerequisites:
     system, which we recommend for performance and flexibility reasons.
     Alternatively you can set CMake variable `OSPRAY_TASKING_SYSTEM` to
     `OpenMP`, `Internal`, or `Cilk` (icc only).
--   OSPRay also heavily uses [Embree], installing version 2.15 or newer
-    is required. If Embree is not found by CMake its location can be
-    hinted with the variable `embree_DIR`.
+-   OSPRay also heavily uses Intel [Embree], installing version 3.2 or
+    newer is required. If Embree is not found by CMake its location can
+    be hinted with the variable `embree_DIR`. NOTE: Windows users should
+    use Embree v3.2.2 or later.
+-   If available OSPRay's [Example Viewer] can be compiled with support
+    for Intel [Open Image Denoise] by enabling
+    `OSPRAY_APPS_ENABLE_DENOISER`. You may need to hint the location of
+    the library with the CMake variable `OpenImageDenoise_DIR`.
 
 Depending on your Linux distribution you can install these dependencies
 using `yum` or `apt-get`. Some of these packages might already be
@@ -117,12 +122,13 @@ way to configure OSPRay and to create the Visual Studio solution files:
     does not exist yet CMake will create it).
 
 -   Click "Configure" and select as generator the Visual Studio version
-    you have, for Win64 (32\ bit builds are not supported by OSPRay),
-    e.g. "Visual Studio 15 2017 Win64".
+    you have (OSPRay needs Visual Studio 14 2015 or newer), for Win64
+    (32\ bit builds are not supported by OSPRay), e.g. "Visual Studio 15
+    2017 Win64".
 
 -   If the configuration fails because some dependencies could not be
-    found then follow the instructions given in the error message, e.g.
-    set the variable `embree_DIR` to the folder where Embree was
+    found then follow the instructions given in the error message,
+    e.g. set the variable `embree_DIR` to the folder where Embree was
     installed.
 
 -   Optionally change the default build options, and then click

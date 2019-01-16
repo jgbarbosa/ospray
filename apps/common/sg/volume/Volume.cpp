@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -108,6 +108,12 @@ namespace ospray {
                   NodeFlags::gui_slider).setMinMax(0.f,255.f);
     }
 
+    Volume::~Volume()
+    {
+      if (isosurfacesGeometry)
+        ospRelease(isosurfacesGeometry);
+    }
+
     std::string Volume::toString() const
     {
       return "ospray::sg::Volume";
@@ -199,6 +205,9 @@ namespace ospray {
       ospVolume = ospNewVolume("shared_structured_volume");
       setValue(ospVolume);
 
+      if (isosurfacesGeometry)
+        ospRelease(isosurfacesGeometry);
+
       isosurfacesGeometry = ospNewGeometry("isosurfaces");
       ospSetObject(isosurfacesGeometry, "volume", ospVolume);
 
@@ -277,6 +286,9 @@ namespace ospray {
 
       if (!fileLoaded) {
         auto voxelType  = child("voxelType").valueAs<std::string>();
+
+        if (isosurfacesGeometry)
+          ospRelease(isosurfacesGeometry);
 
         isosurfacesGeometry = ospNewGeometry("isosurfaces");
         ospSetObject(isosurfacesGeometry, "volume", ospVolume);

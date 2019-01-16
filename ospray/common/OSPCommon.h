@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -83,8 +83,13 @@ typedef int ssize_t;
   extern "C" OSPRAY_DLLEXPORT                                                  \
       Object *ospray_create_##object_name##__##external_name()                 \
   {                                                                            \
-    return new InternalClass;                                                  \
-  } \
+    auto *instance = new InternalClass;                                        \
+    if (instance->getParam<std::string>("externalNameFromAPI", "").empty()) {  \
+      instance->setParam<std::string>("externalNameFromeAPI",                  \
+                                      TOSTRING(external_name));                \
+    }                                                                          \
+    return instance;                                                           \
+  }                                                                            \
   /* additional declaration to avoid "extra ;" -Wpedantic warnings */          \
   Object *ospray_create_##object_name##__##external_name()
 

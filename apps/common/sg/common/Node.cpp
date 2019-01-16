@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -443,8 +443,7 @@ namespace ospray {
                            bool& traverseChildren)
     {
       if (operation == "commit") {
-        if (lastModified() >= lastCommitted() ||
-            childrenLastModified() >= lastCommitted())
+        if (subtreeModifiedButNotCommitted())
           preCommit(ctx);
         else
           traverseChildren = false;
@@ -453,9 +452,7 @@ namespace ospray {
 
     void Node::postTraverse(RenderContext &ctx, const std::string& operation)
     {
-      if (operation == "commit" &&
-          (lastModified() >= lastCommitted() ||
-           childrenLastModified() >= lastCommitted())) {
+      if (operation == "commit" && subtreeModifiedButNotCommitted()) {
         postCommit(ctx);
         markAsCommitted();
       }

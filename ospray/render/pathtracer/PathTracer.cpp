@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -32,6 +32,8 @@ namespace ospray {
 
   PathTracer::PathTracer()
   {
+    setParam<std::string>("externalNameFromAPI", "pathtracer");
+
     ispcEquivalent = ispc::PathTracer_create(this);
   }
 
@@ -44,26 +46,6 @@ namespace ospray {
   {
     return "ospray::PathTracer";
   }
-
-  Material *PathTracer::createMaterial(const char *type)
-  {
-    std::string ptType = std::string("PathTracer_")+type;
-    Material *material = nullptr;
-    try {
-      material = Material::createMaterial(ptType.c_str());
-    } catch (const std::runtime_error &) {
-      std::map<std::string,int> numOccurrances;
-      const std::string T = type;
-      if (numOccurrances[T] == 0) {
-        postStatusMsg() << "#osp:PT: does not know material type '" << type
-                        << "'" << " (replacing with OBJMaterial)";
-      }
-      numOccurrances[T]++;
-      material = Material::createMaterial("PathTracer_OBJMaterial");
-    }
-    return material;
-  }
-
 
   void PathTracer::generateGeometryLights(const Model *const model
       , const affine3f& xfm

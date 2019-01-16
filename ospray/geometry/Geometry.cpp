@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -31,9 +31,8 @@ namespace ospray {
   void Geometry::setMaterial(Material *mat)
   {
     if (!mat) {
-      postStatusMsg() << "#osp: warning - tried to set NULL material; ignoring"
-                      << "#osp: warning. (note this means that object may not "
-                      << " get any material at all!)";
+      postStatusMsg("#osp: warning - tried to set NULL material; ignoring. "
+          "(Note this means that object may not get any material at all!)");
       return;
     }
 
@@ -46,9 +45,8 @@ namespace ospray {
   void Geometry::setMaterialList(Data *matListData)
   {
     if (!matListData || matListData->numItems == 0) {
-      postStatusMsg() << "#osp: warning - tried to set NULL material list; ignoring"
-                      << "#osp: warning. (note this means that object may not "
-                      << " get any material at all!)";
+      postStatusMsg("#osp: warning - tried to set NULL material list, ignoring."
+          " (Note this means that object may not get any material at all!)");
       return;
     }
 

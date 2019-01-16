@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -152,7 +152,8 @@ namespace ospray {
       OSPGeometry newGeometry(const char *type) override;
 
       /*! have given renderer create a new material */
-      OSPMaterial newMaterial(OSPRenderer _renderer, const char *type) override;
+      OSPMaterial newMaterial(OSPRenderer renderer,
+                              const char *material_type) override;
 
       /*! have given renderer create a new material */
       OSPMaterial newMaterial(const char *renderer_type,
@@ -168,11 +169,7 @@ namespace ospray {
       OSPTransferFunction newTransferFunction(const char *type) override;
 
       /*! have given renderer create a new Light */
-      OSPLight newLight(OSPRenderer _renderer, const char *type) override;
-
-      /*! have given renderer create a new Light */
-      OSPLight newLight(const char *renderer_type,
-                        const char *light_type) override;
+      OSPLight newLight(const char *light_type) override;
 
       /*! create a new Texture object */
       OSPTexture newTexture(const char *type) override;

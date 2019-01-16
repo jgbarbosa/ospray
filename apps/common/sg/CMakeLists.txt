@@ -1,5 +1,5 @@
 ## ======================================================================== ##
-## Copyright 2009-2018 Intel Corporation                                    ##
+## Copyright 2009-2019 Intel Corporation                                    ##
 ##                                                                          ##
 ## Licensed under the Apache License, Version 2.0 (the "License");          ##
 ## you may not use this file except in compliance with the License.         ##
@@ -80,6 +80,7 @@ ospray_create_library(ospray_sg SHARED
   SceneGraph.cpp
   Renderer.cpp
 
+  geometry/Curves.cpp
   geometry/Cylinders.cpp
   geometry/Geometry.cpp
   geometry/QuadMesh.cpp
@@ -96,6 +97,7 @@ ospray_create_library(ospray_sg SHARED
   common/Common.cpp
   common/Data.cpp
   common/FrameBuffer.cpp
+  common/ToneMapper.cpp
   common/Light.cpp
   common/Material.cpp
   common/Node.cpp
@@ -103,7 +105,6 @@ ospray_create_library(ospray_sg SHARED
   common/Renderable.cpp
   common/RenderContext.h
   common/Serialization.cpp
-  common/Texture2D.cpp
   common/Transform.cpp
   common/Model.cpp
   common/Instance.cpp
@@ -148,6 +149,10 @@ ospray_create_library(ospray_sg SHARED
 
   importer/detail_xyz/Model.cpp
 
+  texture/Texture.cpp
+  texture/Texture2D.cpp
+  texture/TextureVolume.cpp
+
   ${SG_VTK_SRCS}
   ${CHOMBO_SRCS}
 
@@ -159,6 +164,7 @@ LINK
   ${HDF5_LIBRARIES}
   ${VTK_LIBRARIES}
   ${OPENIMAGEIO_LIBRARIES}
+  ${OPENIMAGEDENOISE}
 )
 
 ## Install headers in SDK ##
@@ -189,6 +195,7 @@ ospray_install_sdk_headers(
   common/Common.h
   common/Data.h
   common/FrameBuffer.h
+  common/ToneMapper.h
   common/Instance.h
   common/Light.h
   common/Material.h
@@ -201,7 +208,6 @@ ospray_install_sdk_headers(
   common/RuntimeError.h
   common/Selector.h
   common/Serialization.h
-  common/Texture2D.h
   common/Transform.h
 
   DESTINATION ${OSPRAY_SG_SDK_INSTALL_LOC}/common
@@ -214,6 +220,7 @@ ospray_install_sdk_headers(
 )
 
 ospray_install_sdk_headers(
+  geometry/Curves.h
   geometry/Cylinders.h
   geometry/Geometry.h
   geometry/QuadMesh.h
@@ -234,6 +241,14 @@ ospray_install_sdk_headers(
   module/Module.h
 
   DESTINATION ${OSPRAY_SG_SDK_INSTALL_LOC}/module
+)
+
+ospray_install_sdk_headers(
+  texture/Texture.h
+  texture/Texture2D.h
+  texture/TextureVolume.h
+
+  DESTINATION ${OSPRAY_SG_SDK_INSTALL_LOC}/texture
 )
 
 ospray_install_sdk_headers(

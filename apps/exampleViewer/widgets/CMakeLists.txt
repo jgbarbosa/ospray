@@ -1,5 +1,5 @@
 ## ======================================================================== ##
-## Copyright 2009-2018 Intel Corporation                                    ##
+## Copyright 2009-2019 Intel Corporation                                    ##
 ##                                                                          ##
 ## Licensed under the Apache License, Version 2.0 (the "License");          ##
 ## you may not use this file except in compliance with the License.         ##
@@ -21,6 +21,8 @@ ospray_create_library(ospray_imgui3d_sg
   imguiViewer.cpp
   transferFunction.cpp
   cameraManipulator.cpp
+
+  sg_imgui/ospray_sg_ui.cpp
 LINK
   ospray
   ospray_common

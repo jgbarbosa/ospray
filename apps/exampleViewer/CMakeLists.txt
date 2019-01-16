@@ -1,5 +1,5 @@
 ## ======================================================================== ##
-## Copyright 2009-2018 Intel Corporation                                    ##
+## Copyright 2009-2019 Intel Corporation                                    ##
 ##                                                                          ##
 ## Licensed under the Apache License, Version 2.0 (the "License");          ##
 ## you may not use this file except in compliance with the License.         ##
@@ -17,7 +17,7 @@
 # avoid CMake policy CMP0072 warning:
 # prefer libGL over libOpenGl for better compatibility with SWR
 set(OpenGL_GL_PREFERENCE "LEGACY")
-find_package(OpenGL REQUIRED)
+find_package(OpenGL 2 REQUIRED)
 
 ospray_disable_compiler_warnings()
 

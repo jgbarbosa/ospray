@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -47,6 +47,7 @@ namespace ospray {
     void startAsyncRendering() override;
 
     void setViewportToSgCamera();
+    void setDefaultViewportToCurrent();
 
   protected:
 
@@ -70,19 +71,10 @@ namespace ospray {
     void guiMenuView();
     void guiMenuMPI();
 
-    void guiCarDemo();
-
     void guiRenderStats();
     void guiRenderCustomWidgets();
     void guiTransferFunction();
     void guiFindNode();
-
-    void guiSingleNode(const std::string &baseText,
-                       std::shared_ptr<sg::Node> node);
-    void guiNodeContextMenu(const std::string &name,
-                            std::shared_ptr<sg::Node> node);
-
-    void guiSGTree(const std::string &name, std::shared_ptr<sg::Node> node);
 
     void guiSearchSGNodes();
 
@@ -93,11 +85,13 @@ namespace ospray {
     double lastGUITime;
     double lastDisplayTime;
     double lastTotalTime;
-    float lastVariance;
+#ifdef OSPRAY_APPS_ENABLE_DENOISER
+    double denoiseFPS;
+#endif
 
     imgui3D::ImGui3DWidget::ViewPort originalView;
     bool saveScreenshot {false}; // write next mapped framebuffer to disk
-    bool cancelFrameOnInteraction {false};
+    bool cancelFrameOnInteraction {true};
 
     float frameProgress {0.f};
     std::atomic<bool> cancelRendering {false};
@@ -118,6 +112,9 @@ namespace ospray {
     AsyncRenderEngine renderEngine;
 
     bool useDynamicLoadBalancer{false};
+#ifdef OSPRAY_APPS_ENABLE_DENOISER
+    bool asyncDenoising{false};
+#endif
     int  numPreAllocatedTiles{4};
 
     PickMode lastPickQueryType {PICK_CAMERA};

@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -26,21 +26,21 @@
 #  define OSPSG_INTERFACE
 #endif
 
+#include "ospcommon/utility/CodeTimer.h"
+
 // sg components
 #include "common/Data.h"
 #include "common/FrameBuffer.h"
 #include "common/Renderable.h"
 #include "common/Transform.h"
 
-#include "camera/Camera.h"
-
-#include "geometry/Geometry.h"
-
 #include "importer/Importer.h"
 
+#include "geometry/Geometry.h"
 #include "volume/Volume.h"
-
+#include "camera/Camera.h"
 #include "Renderer.h"
+
 
 namespace ospray {
   namespace sg {
@@ -62,11 +62,13 @@ namespace ospray {
 
       // Frame interface //
 
-      void renderFrame(bool verifyCommit = true);
+      std::shared_ptr<FrameBuffer> renderFrame(bool verifyCommit = true);
 
       OSPPickResult pick(const vec2f &pickPos);
 
       int frameId() const;
+      float elapsedSeconds() const;
+      float estimatedSeconds() const;
 
     private:
 
@@ -80,6 +82,15 @@ namespace ospray {
 
       int numAccumulatedFrames{0};
       int frameAccumulationLimit{-1};
+      
+      // taking total time since accumulation reset
+      utility::CodeTimer accumulationTimer;
+      // first measurement point, after 4 frames
+      float firstVariance;
+      float firstSeconds;
+      float etaVariance {inf};
+      float etaAccumulation {inf};
+      float etaSeconds {inf};
     };
 
   } // ::ospray::sg

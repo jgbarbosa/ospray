@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -142,8 +142,8 @@ namespace ospray {
       virtual OSPTransferFunction newTransferFunction(const char *type) = 0;
 
       /*! have given renderer create a new material */
-      virtual OSPMaterial newMaterial(OSPRenderer _renderer,
-                                      const char *type) = 0;
+      virtual OSPMaterial newMaterial(OSPRenderer renderer,
+                                      const char *material_type) = 0;
 
       /*! have given renderer create a new material */
       virtual OSPMaterial newMaterial(const char *renderer_type,
@@ -153,11 +153,7 @@ namespace ospray {
       virtual OSPTexture newTexture(const char *type) = 0;
 
       /*! have given renderer create a new Light */
-      virtual OSPLight newLight(OSPRenderer _renderer, const char *type) = 0;
-
-      /*! have given renderer create a new Light */
-      virtual OSPLight newLight(const char *renderer_type,
-                                const char *light_type) = 0;
+      virtual OSPLight newLight(const char *light_type) = 0;
 
       /*! clear the specified channel(s) in 'fbChannelFlags'
 
@@ -224,6 +220,8 @@ namespace ospray {
       virtual void commit();
       bool isCommitted();
 
+      bool hasProgressCallback() { return progressCallback != nullptr; }
+
       // Public Data //
 
       int numThreads {-1};
@@ -256,7 +254,7 @@ namespace ospray {
       /* TODO
       std::function<int(void*, const float)>
       progress_fcn { [](void*, const float){ return 1; } };*/
-      OSPProgressFunc progressCallback;
+      OSPProgressFunc progressCallback {nullptr};
       void *progressUserPtr;
       std::mutex progressMutex; // protect user callback function
 

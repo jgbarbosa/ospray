@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -66,7 +66,7 @@ namespace ospray {
       void addGeneratorNodesToWorld(sg::Node &renderer);
       void addAnimatedImporterNodesToWorld(sg::Node &renderer);
       void setupCamera(sg::Node &renderer);
-      void setupToneMapping(sg::Node &renderer);
+      void setupToneMapping(sg::Node &fb, sg::Node &fb2);
       void addPlaneToScene(sg::Node &renderer);
       void printHelp();
 

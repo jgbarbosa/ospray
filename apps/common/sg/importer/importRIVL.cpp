@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -17,10 +17,10 @@
 #undef NDEBUG
 
 #include "SceneGraph.h"
-#include "sg/common/Texture2D.h"
 #include "sg/common/Instance.h"
 #include "sg/geometry/TriangleMesh.h"
-#include "common/sg/visitor/PrintNodes.h"
+#include "sg/texture/Texture2D.h"
+#include "sg/visitor/PrintNodes.h"
 
 // stl
 #include <map>

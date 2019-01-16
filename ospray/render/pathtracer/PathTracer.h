@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -27,7 +27,6 @@ namespace ospray {
     virtual ~PathTracer() override;
     virtual std::string toString() const override;
     virtual void commit() override;
-    virtual Material *createMaterial(const char *type) override;
 
     void generateGeometryLights(const Model *const, const affine3f& xfm,
                                 float *const areaPDF);

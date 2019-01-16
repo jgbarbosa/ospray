@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -61,6 +61,7 @@ namespace ospray {
       } else if (voxelType == "unsigned char") {
         voxelDataNode = std::make_shared<DataArray1uc>(
               (unsigned char*)voxelData, numVoxels);
+        voxelType = "uchar";
       } else if (voxelType == "int") {
         voxelDataNode = std::make_shared<DataArray1i>(
               (int*)voxelData, numVoxels);

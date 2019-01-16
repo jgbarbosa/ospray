@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright 2009-2018 Intel Corporation                                    //
+// Copyright 2009-2019 Intel Corporation                                    //
 //                                                                          //
 // Licensed under the Apache License, Version 2.0 (the "License");          //
 // you may not use this file except in compliance with the License.         //
@@ -18,9 +18,9 @@
 
 // sg
 #include "SceneGraph.h"
-#include "sg/common/Texture2D.h"
 #include "sg/geometry/TriangleMesh.h"
 #include "sg/geometry/QuadMesh.h"
+#include "sg/texture/Texture2D.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION  // define this in only *one* .cc
 #include "../3rdParty/tiny_obj_loader.h"
